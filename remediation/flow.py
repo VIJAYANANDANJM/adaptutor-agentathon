@@ -29,6 +29,7 @@ from slice.records import RunState
 from slice.runner import Context, Handler
 from slice.store import Store
 
+from remediation.learner import LearnerModel
 from remediation.provider import ExplanationProvider, get_provider
 from remediation.questions import (
     ANSWER_KEY, ALL_CONCEPTS, QUESTION_BY_ID, QUESTION_CONCEPT,
@@ -38,6 +39,7 @@ from remediation.schema import (
     Diagnosis, ExplanationPayload, InstructorFlag, Outcome,
     QuizSubmission, RetestResult, StyleSelection,
 )
+from remediation.selector import adaptive_select
 
 MAX_REVISIONS_PER_CONCEPT = 2
 STYLES = ["analogy", "trace"]
@@ -61,75 +63,12 @@ def select_style(store: Store, student_id: str, concept: str,
                  styles_tried: list[str]) -> tuple[str, str]:
     """Pick the best explanation style for a concept.
 
-    Priority:
-    1. Student-specific history (if prior runs exist for this student)
-    2. Population-level win rates across all students
-    3. Deterministic tie-breaker default
+    Delegates to remediation.selector.adaptive_select which uses:
+        Score(style) = 0.7 × StudentRate + 0.3 × CohortRate
 
     Returns (selected_style, reason).
     """
-    available = [s for s in STYLES if s not in styles_tried]
-    if len(available) == 1:
-        return available[0], f"{styles_tried[0]} tried and failed for this student; switching to {available[0]}"
-    if not available:
-        return STYLES[0], "both styles exhausted"
-
-    outcomes = store.all_versions_by_kind("outcome")
-
-    student_wins: dict[str, int] = {s: 0 for s in STYLES}
-    student_total: dict[str, int] = {s: 0 for s in STYLES}
-    pop_wins: dict[str, int] = {s: 0 for s in STYLES}
-    pop_total: dict[str, int] = {s: 0 for s in STYLES}
-
-    for v in outcomes:
-        p = v.payload
-        if p.get("concept") != concept:
-            continue
-        style = p.get("style", "")
-        if style not in STYLES:
-            continue
-        passed = p.get("passed", False)
-
-        if p.get("student_id") == student_id:
-            student_total[style] += 1
-            if passed:
-                student_wins[style] += 1
-        pop_total[style] += 1
-        if passed:
-            pop_wins[style] += 1
-
-    has_student_history = sum(student_total.values()) > 0
-
-    if has_student_history:
-        rates = {}
-        for s in available:
-            if student_total[s] > 0:
-                rates[s] = student_wins[s] / student_total[s]
-            else:
-                rates[s] = 0.5
-        best = max(available, key=lambda s: (rates[s], s == DEFAULT_STYLE))
-        reason = "; ".join(
-            f"{s} succeeded {student_wins[s]}/{student_total[s]} times for this student on {concept}"
-            for s in available
-        )
-        return best, reason
-
-    has_pop_history = sum(pop_total.values()) > 0
-    if has_pop_history:
-        rates = {}
-        for s in available:
-            if pop_total[s] > 0:
-                rates[s] = pop_wins[s] / pop_total[s]
-            else:
-                rates[s] = 0.5
-        best = max(available, key=lambda s: (rates[s], s == DEFAULT_STYLE))
-        reason = "; ".join(
-            f"{s} succeeded {pop_wins[s]}/{pop_total[s]} times for {concept}"
-            for s in available
-        )
-        return best, reason
-
-    return DEFAULT_STYLE, f"no prior data for {concept}; defaulting to {DEFAULT_STYLE}"
+    return adaptive_select(store, student_id, concept, styles_tried)
 
 
 # ── Deterministic: Count revisions for a concept ──────────────────────────
@@ -150,7 +89,8 @@ def styles_tried_for_concept(store: Store, run_id: str, concept: str) -> list[st
 # ── State machine handlers ─────────────────────────────────────────────────
 
 def handle_quiz(ctx: Context) -> RunState:
-    """QUIZ -> DIAGNOSE: Read the quiz submission and score it."""
+    """QUIZ -> DIAGNOSE: Read the quiz submission and score it.
+    Also initializes the persistent learner model from quiz results."""
     sub = ctx.latest("quiz_submission")
     if sub is None:
         return RunState.FAILED
@@ -167,6 +107,10 @@ def handle_quiz(ctx: Context) -> RunState:
         concepts_passed=passed,
     )
     ctx.append("diagnosis", diag.model_dump(), produced_by="system")
+
+    # ── Initialize persistent learner model from quiz ──
+    learner = LearnerModel(ctx.store, student_id)
+    learner.init_from_quiz(passed, failed)
 
     if not failed:
         ctx.append("outcome", {
@@ -367,6 +311,10 @@ def handle_retest(ctx: Context) -> RunState:
                 print(f"Status: Concept '{concept.replace('_', ' ').title()}' resolved via instructor intervention.")
                 print(f"{'='*60}\n")
 
+                # Update learner model for instructor resolution
+                learner = LearnerModel(ctx.store, student_id)
+                learner.update_on_instructor(concept)
+
                 ctx.append("outcome", Outcome(
                     student_id=student_id,
                     concept=concept,
@@ -411,12 +359,17 @@ def handle_retest(ctx: Context) -> RunState:
 
 
 def _evaluate(ctx: Context, retest: dict, sel: dict) -> RunState:
-    """EVALUATE: Score retest. Pass → RESOLVED. Fail + untried → backward. Fail + both → flag."""
+    """EVALUATE: Score retest. Pass → RESOLVED. Fail + untried → backward. Fail + both → flag.
+    Updates the persistent learner model after evaluation."""
     student_id = retest["student_id"]
     concept = retest["concept"]
     style = retest["style_used"]
     passed = retest["passed"]
     attempt = retest["attempt"]
+
+    # ── Update persistent learner model ──
+    learner = LearnerModel(ctx.store, student_id)
+    learner.update_on_retest(concept, style, attempt, passed)
 
     outcome = Outcome(
         student_id=student_id,
@@ -453,7 +406,19 @@ def _evaluate(ctx: Context, retest: dict, sel: dict) -> RunState:
         # Backward loop: return to SELECT to try another style
         return RunState.GATING
 
-    # Both styles failed: escalate to instructor
+    # Both styles failed: escalate to instructor with enriched context
+    learner = LearnerModel(ctx.store, student_id)
+    mastery_pct = int(learner.concept_mastery(concept) * 100)
+    budget_info = ctx.budget.summary()
+
+    # Collect wrong answers for this concept
+    sub = ctx.latest("quiz_submission")
+    q_answers = sub["answers"] if sub else {}
+    wrong_answers = {}
+    for qid, ans in q_answers.items():
+        if QUESTION_CONCEPT.get(qid) == concept and ANSWER_KEY.get(qid) != ans.strip().lower():
+            wrong_answers[qid] = ans
+
     flag = InstructorFlag(
         student_id=student_id,
         concept=concept,
@@ -475,6 +440,9 @@ def _evaluate(ctx: Context, retest: dict, sel: dict) -> RunState:
             "student_id": student_id,
             "concept": concept,
             "styles_tried": tried,
+            "mastery_pct": mastery_pct,
+            "wrong_answers": wrong_answers,
+            "budget_remaining": budget_info["tokens_remaining"],
             "resume_state": RunState.PROBING.value,
         },
         settings=ctx.settings,
@@ -522,6 +490,9 @@ def handle_instructor_response(ctx: Context) -> RunState:
 
     # Instructor responded with a hint. Mark concept resolved.
     if concept:
+        learner = LearnerModel(ctx.store, student_id)
+        learner.update_on_instructor(concept)
+
         ctx.append("outcome", Outcome(
             student_id=student_id,
             concept=concept,

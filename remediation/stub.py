@@ -1,13 +1,15 @@
 """
-Deterministic canned responses for the three test personas.
+Deterministic canned responses for test personas and demo personas.
 
-These stubs simulate student answers for automated end-to-end testing.
+These stubs simulate student answers for automated end-to-end testing
+and for the `python run.py demo` command.
 Zero tokens consumed — no network, no API keys.
 """
 from __future__ import annotations
 
 
 PERSONA_QUIZ_ANSWERS = {
+    # ── Test personas (existing) ──
     "priya_22cs031": {
         "Q1": "a", "Q2": "b", "Q3": "b", "Q4": "b",
         "Q5": "a", "Q6": "c", "Q7": "a", "Q8": "a",
@@ -20,10 +22,25 @@ PERSONA_QUIZ_ANSWERS = {
         "Q1": "a", "Q2": "b", "Q3": "b", "Q4": "b",
         "Q5": "a", "Q6": "c", "Q7": "a", "Q8": "a",
     },
+    # ── Demo personas (used by `python run.py demo`) ──
+    # All three fail only Q5 (call_stack): answer "a" instead of correct "b"
+    "ananya_analogy": {
+        "Q1": "a", "Q2": "b", "Q3": "b", "Q4": "b",
+        "Q5": "a", "Q6": "c", "Q7": "a", "Q8": "a",
+    },
+    "bharat_trace": {
+        "Q1": "a", "Q2": "b", "Q3": "b", "Q4": "b",
+        "Q5": "a", "Q6": "c", "Q7": "a", "Q8": "a",
+    },
+    "karthik_stuck": {
+        "Q1": "a", "Q2": "b", "Q3": "b", "Q4": "b",
+        "Q5": "a", "Q6": "c", "Q7": "a", "Q8": "a",
+    },
 }
 
 
 PERSONA_RETEST_ANSWERS: dict[str, dict[str, dict[str, str]]] = {
+    # ── Test personas (existing) ──
     "priya_22cs031": {
         "call_stack": {
             "analogy_1": "b",   # correct on first attempt with analogy
@@ -36,12 +53,34 @@ PERSONA_RETEST_ANSWERS: dict[str, dict[str, dict[str, str]]] = {
         },
         "return_propagation": {
             "analogy_1": "b",   # correct on first attempt with analogy
+            "trace_1": "b",     # correct on first attempt with trace (adaptive selector may pick this)
         },
     },
     "karthik_22cs012": {
         "call_stack": {
             "analogy_1": "a",   # wrong on first attempt with analogy
             "trace_2": "a",     # wrong on second attempt with trace → instructor flag
+        },
+    },
+    # ── Demo personas ──
+    "ananya_analogy": {
+        "call_stack": {
+            "analogy_1": "b",   # correct on attempt 1 with analogy (her strength)
+            "trace_1": "b",     # also correct with trace (fallback)
+        },
+    },
+    "bharat_trace": {
+        "call_stack": {
+            "trace_1": "b",     # correct on attempt 1 with trace (his strength)
+            "analogy_1": "a",   # wrong with analogy
+        },
+    },
+    "karthik_stuck": {
+        "call_stack": {
+            "trace_1": "a",     # wrong on attempt 1 with trace
+            "analogy_1": "a",   # wrong on attempt 1 with analogy
+            "analogy_2": "a",   # wrong on attempt 2 with analogy → escalates
+            "trace_2": "a",     # wrong on attempt 2 with trace → escalates
         },
     },
 }

@@ -88,38 +88,20 @@ class TestStyleSelection:
         assert "switching to trace" in reason
 
     def test_population_level_selection(self, store):
-        # Seed population data: trace wins more for call_stack
-        r1 = store.create_run("test")
-        store.append(r1, "outcome", Outcome(
-            student_id="s1", concept="call_stack", style="analogy",
-            passed=False, total_attempts=1).model_dump(), "sys")
-        r2 = store.create_run("test")
-        store.append(r2, "outcome", Outcome(
-            student_id="s2", concept="call_stack", style="trace",
-            passed=True, total_attempts=1).model_dump(), "sys")
-        r3 = store.create_run("test")
-        store.append(r3, "outcome", Outcome(
-            student_id="s3", concept="call_stack", style="trace",
-            passed=True, total_attempts=1).model_dump(), "sys")
+        # Seed population data via intervention_history: trace wins more for call_stack
+        store.record_intervention("s1", "call_stack", "analogy", 1, False)
+        store.record_intervention("s2", "call_stack", "trace", 1, True)
+        store.record_intervention("s3", "call_stack", "trace", 1, True)
 
         style, reason = select_style(store, "new_student", "call_stack", [])
         assert style == "trace"
 
     def test_student_history_takes_priority(self, store):
         # Population says trace is better
-        r1 = store.create_run("test")
-        store.append(r1, "outcome", Outcome(
-            student_id="other", concept="call_stack", style="trace",
-            passed=True, total_attempts=1).model_dump(), "sys")
-        r2 = store.create_run("test")
-        store.append(r2, "outcome", Outcome(
-            student_id="other", concept="call_stack", style="trace",
-            passed=True, total_attempts=1).model_dump(), "sys")
+        store.record_intervention("other", "call_stack", "trace", 1, True)
+        store.record_intervention("other", "call_stack", "trace", 1, True)
         # But this student previously succeeded with analogy
-        r3 = store.create_run("test")
-        store.append(r3, "outcome", Outcome(
-            student_id="target_student", concept="call_stack", style="analogy",
-            passed=True, total_attempts=1).model_dump(), "sys")
+        store.record_intervention("target_student", "call_stack", "analogy", 1, True)
 
         style, reason = select_style(store, "target_student", "call_stack", [])
         assert style == "analogy"

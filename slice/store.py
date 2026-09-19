@@ -77,6 +77,28 @@ BEGIN SELECT RAISE(ABORT, 'versions is append-only: write a new version'); END;
 CREATE TRIGGER IF NOT EXISTS versions_no_delete
 BEFORE DELETE ON versions
 BEGIN SELECT RAISE(ABORT, 'versions is append-only: history is not editable'); END;
+
+-- Persistent learner profiles: per-student, per-concept mastery.
+CREATE TABLE IF NOT EXISTS learner_profiles (
+    student_id  TEXT NOT NULL,
+    concept     TEXT NOT NULL,
+    mastery     REAL NOT NULL DEFAULT 0.0,
+    updated_at  REAL NOT NULL,
+    PRIMARY KEY (student_id, concept)
+);
+
+-- Intervention history: every attempt for every student.
+CREATE TABLE IF NOT EXISTS intervention_history (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id  TEXT NOT NULL,
+    concept     TEXT NOT NULL,
+    style       TEXT NOT NULL,
+    attempt     INTEGER NOT NULL,
+    passed      INTEGER NOT NULL,
+    created_at  REAL NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ih_student ON intervention_history(student_id);
+CREATE INDEX IF NOT EXISTS ih_concept ON intervention_history(concept);
 """
 
 
@@ -230,6 +252,113 @@ class Store:
 
     def close(self) -> None:
         self.db.close()
+
+    # ------------------------------------------------- learner profiles
+
+    def upsert_mastery(self, student_id: str, concept: str, mastery: float) -> None:
+        """Set mastery for a student/concept. Clamps to [0.0, 1.0]."""
+        mastery = max(0.0, min(1.0, mastery))
+        self.db.execute(
+            "INSERT INTO learner_profiles(student_id, concept, mastery, updated_at)"
+            " VALUES (?,?,?,?)"
+            " ON CONFLICT(student_id, concept) DO UPDATE SET mastery=excluded.mastery,"
+            " updated_at=excluded.updated_at",
+            (student_id, concept, mastery, time.time()),
+        )
+
+    def get_mastery(self, student_id: str, concept: str) -> float | None:
+        row = self.db.execute(
+            "SELECT mastery FROM learner_profiles WHERE student_id=? AND concept=?",
+            (student_id, concept),
+        ).fetchone()
+        return float(row["mastery"]) if row else None
+
+    def get_learner_profile(self, student_id: str) -> dict[str, Any]:
+        """Full learner profile: mastery map, weak/strong concepts, style efficacy."""
+        rows = self.db.execute(
+            "SELECT concept, mastery FROM learner_profiles WHERE student_id=?",
+            (student_id,),
+        ).fetchall()
+        mastery = {r["concept"]: float(r["mastery"]) for r in rows}
+        weak = [c for c, m in mastery.items() if m < 0.60]
+        strong = [c for c, m in mastery.items() if m >= 0.75]
+        return {
+            "student_id": student_id,
+            "mastery": mastery,
+            "weak_concepts": weak,
+            "strong_concepts": strong,
+            "style_efficacy": self.get_style_efficacy(student_id),
+            "intervention_history": self.get_intervention_history(student_id),
+        }
+
+    def get_all_student_ids(self) -> list[str]:
+        """Return all distinct student IDs that have learner profiles."""
+        rows = self.db.execute(
+            "SELECT DISTINCT student_id FROM learner_profiles ORDER BY student_id"
+        ).fetchall()
+        return [r["student_id"] for r in rows]
+
+    # ------------------------------------------ intervention history
+
+    def record_intervention(self, student_id: str, concept: str, style: str,
+                            attempt: int, passed: bool) -> None:
+        self.db.execute(
+            "INSERT INTO intervention_history(student_id, concept, style, attempt, passed, created_at)"
+            " VALUES (?,?,?,?,?,?)",
+            (student_id, concept, style, attempt, 1 if passed else 0, time.time()),
+        )
+
+    def get_intervention_history(self, student_id: str) -> list[dict[str, Any]]:
+        rows = self.db.execute(
+            "SELECT concept, style, attempt, passed, created_at FROM intervention_history"
+            " WHERE student_id=? ORDER BY created_at",
+            (student_id,),
+        ).fetchall()
+        return [
+            {"concept": r["concept"], "style": r["style"], "attempt": int(r["attempt"]),
+             "passed": bool(r["passed"]), "timestamp": float(r["created_at"])}
+            for r in rows
+        ]
+
+    def get_style_efficacy(self, student_id: str) -> dict[str, dict[str, Any]]:
+        """Per-style win rate for a student: {style: {wins, total, rate}}."""
+        rows = self.db.execute(
+            "SELECT style, SUM(passed) as wins, COUNT(*) as total"
+            " FROM intervention_history WHERE student_id=?"
+            " GROUP BY style",
+            (student_id,),
+        ).fetchall()
+        result = {}
+        for r in rows:
+            total = int(r["total"])
+            wins = int(r["wins"])
+            result[r["style"]] = {
+                "wins": wins, "total": total,
+                "rate": wins / total if total > 0 else 0.0,
+            }
+        return result
+
+    def get_student_style_rate(self, student_id: str, style: str) -> float | None:
+        """Success rate for a specific style for a student. None if no history."""
+        row = self.db.execute(
+            "SELECT SUM(passed) as wins, COUNT(*) as total"
+            " FROM intervention_history WHERE student_id=? AND style=?",
+            (student_id, style),
+        ).fetchone()
+        if row is None or int(row["total"]) == 0:
+            return None
+        return int(row["wins"]) / int(row["total"])
+
+    def get_cohort_style_rate(self, style: str) -> float | None:
+        """Population-level success rate for a style. None if no history."""
+        row = self.db.execute(
+            "SELECT SUM(passed) as wins, COUNT(*) as total"
+            " FROM intervention_history WHERE style=?",
+            (style,),
+        ).fetchone()
+        if row is None or int(row["total"]) == 0:
+            return None
+        return int(row["wins"]) / int(row["total"])
 
 
 def _to_version(r: sqlite3.Row) -> Version:
