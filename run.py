@@ -53,6 +53,16 @@ def run_session(student_id: str) -> None:
     if existing:
         print(f"Resuming session {existing} for {student_id}...")
         run_id = existing
+        past_experts = store.history(run_id, "expert_answer")
+        if past_experts:
+            latest_exp = past_experts[-1].payload
+            ans = latest_exp.get("answer")
+            who = (latest_exp.get("who") or "Instructor").capitalize()
+            print(f"\n{'='*60}")
+            print(f"📬 LATEST {who.upper()} GUIDANCE")
+            print(f"{'='*60}")
+            print(f"\"{ans}\"")
+            print(f"{'='*60}\n")
     else:
         print(f"\n{'='*60}")
         print(f"  CS3301 Data Structures — Week 6 Recursion Quiz")

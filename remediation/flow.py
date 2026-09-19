@@ -334,6 +334,10 @@ def handle_retest(ctx: Context) -> RunState:
             idx = rem_state["current_concept_index"]
 
             if source == "unresolved_no_expert":
+                print(f"\n{'='*60}")
+                print(f"⚠️ NO INSTRUCTOR RESPONSE FOR: {concept.replace('_', ' ').title()}")
+                print(f"Status: Flag timed out without human response. Concept marked unresolved.")
+                print(f"{'='*60}\n")
                 ctx.append("outcome", Outcome(
                     student_id=student_id,
                     concept=concept,
@@ -354,6 +358,15 @@ def handle_retest(ctx: Context) -> RunState:
                 return RunState.GATING
             else:
                 # Instructor responded with a hint — mark concept resolved
+                instructor_msg = latest_expert.get("answer", "")
+                who = (latest_expert.get("who") or "Instructor").capitalize()
+                print(f"\n{'='*60}")
+                print(f"📬 {who.upper()} GUIDANCE RECEIVED FOR: {concept.replace('_', ' ').title()}")
+                print(f"{'='*60}")
+                print(f"Instructor feedback: \"{instructor_msg}\"")
+                print(f"Status: Concept '{concept.replace('_', ' ').title()}' resolved via instructor intervention.")
+                print(f"{'='*60}\n")
+
                 ctx.append("outcome", Outcome(
                     student_id=student_id,
                     concept=concept,
@@ -365,6 +378,9 @@ def handle_retest(ctx: Context) -> RunState:
                 next_idx = idx + 1
                 if next_idx >= len(concepts):
                     return RunState.COMPLETE
+
+                next_concept = concepts[next_idx]
+                print(f"Moving to next concept needing remediation: {next_concept.replace('_', ' ').title()}...\n")
 
                 ctx.append("remediation_state", {
                     "student_id": student_id,

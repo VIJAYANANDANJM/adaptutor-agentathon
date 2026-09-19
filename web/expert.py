@@ -109,8 +109,12 @@ def show(qid: str):
 
 
 @app.post("/q/{qid}")
-def submit(qid: str, answer: str = Form(...), who: str = Form("instructor")):
-    text = (answer or "").strip()
+async def submit(qid: str, request: Request):
+    raw_body = (await request.body()).decode("utf-8")
+    import urllib.parse
+    params = urllib.parse.parse_qs(raw_body)
+    text = params.get("answer", [""])[0].strip()
+    who = params.get("who", ["instructor"])[0].strip()
     if not text:
         return RedirectResponse(f"/q/{qid}", status_code=303)
     callback.answer(_store(), qid, text, who=who)
