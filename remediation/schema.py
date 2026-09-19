@@ -1,0 +1,78 @@
+"""
+Pydantic schemas for every domain record in the remediation loop.
+
+These are the typed contracts between steps. The store persists them as JSON;
+the flow reads and writes them through these models.
+"""
+from __future__ import annotations
+
+from typing import Optional
+from pydantic import BaseModel
+
+
+class QuizSubmission(BaseModel):
+    """A student's answers to the fixed 8-question recursion quiz."""
+    kind: str = "quiz_submission"
+    student_id: str
+    answers: dict[str, str]  # e.g. {"Q1": "a", "Q2": "b", ...}
+
+
+class Diagnosis(BaseModel):
+    """Result of scoring quiz answers against the fixed key."""
+    kind: str = "diagnosis"
+    student_id: str
+    wrong_questions: list[str]
+    concepts_failed: list[str]
+    concepts_passed: list[str]
+
+
+class StyleSelection(BaseModel):
+    """Which explanation style was picked for a concept and why."""
+    kind: str = "style_selection"
+    student_id: str
+    concept: str
+    selected_style: str  # "analogy" or "trace"
+    reason: str
+    attempt: int
+
+
+class ExplanationPayload(BaseModel):
+    """The explanation generated (by LLM or mock) for a student."""
+    kind: str = "explanation"
+    student_id: str
+    concept: str
+    style: str
+    text: str
+
+
+class RetestResult(BaseModel):
+    """Result of a student's retest on one concept after explanation."""
+    kind: str = "retest_result"
+    student_id: str
+    concept: str
+    style_used: str
+    attempt: int
+    passed: bool
+    student_answer: Optional[str] = None
+    correct_answer: Optional[str] = None
+
+
+class Outcome(BaseModel):
+    """Final outcome for one concept for one student."""
+    kind: str = "outcome"
+    student_id: str
+    concept: str
+    style: str
+    passed: bool
+    total_attempts: int
+
+
+class InstructorFlag(BaseModel):
+    """Escalation record when both explanation styles fail."""
+    kind: str = "instructor_flag"
+    student_id: str
+    concept: str
+    styles_tried: list[str]
+    both_failed: bool
+    state: str  # "waiting_instructor"
+    message: str
