@@ -202,6 +202,7 @@ def handle_explain(ctx: Context) -> RunState:
     student_id = sel_data["student_id"]
     concept = sel_data["concept"]
     style = sel_data["selected_style"]
+    attempt = sel_data.get("attempt", 1)
 
     sub = ctx.latest("quiz_submission")
     q_answers = sub["answers"] if sub else {}
@@ -216,8 +217,18 @@ def handle_explain(ctx: Context) -> RunState:
         question_text = q.text if q else ""
         wrong_answer = q_answers.get(qid, "")
         correct_answer = ANSWER_KEY.get(qid, "")
+        options = q.options if q else {}
     else:
         question_text, wrong_answer, correct_answer = "", "", ""
+        options = {}
+
+    # Extract LearnerModel concept mastery
+    learner = LearnerModel(ctx.store, student_id)
+    mastery_pct = int(learner.concept_mastery(concept) * 100)
+
+    # Extract styles tried for this concept
+    tried = styles_tried_for_concept(ctx.store, ctx.run_id, concept)
+    prev_styles = [s for s in tried if s != style]
 
     provider = get_provider(ctx.settings.llm_mode)
     if ctx.settings.llm_mode == "real":
@@ -231,6 +242,10 @@ def handle_explain(ctx: Context) -> RunState:
         question_text=question_text,
         budget=ctx.budget,
         settings=ctx.settings,
+        options=options,
+        attempt=attempt,
+        mastery_pct=mastery_pct,
+        previous_styles=prev_styles,
     )
 
     ctx.append("explanation", explanation.model_dump(), produced_by="llm")
@@ -239,6 +254,7 @@ def handle_explain(ctx: Context) -> RunState:
     ctx.store.bump(ctx.run_id, "model_calls")
 
     return RunState.PROBING  # PROBING = RETEST step
+
 
 
 def handle_retest(ctx: Context) -> RunState:
