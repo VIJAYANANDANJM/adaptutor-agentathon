@@ -84,37 +84,48 @@ def run_session(student_id: str) -> None:
         elif state == RunState.FAILED:
             print("\nSession ended.")
             break
-        elif state == RunState.AWAITING_EXPERT:
-            print("\nYour instructor has been notified. You will hear back soon.")
-            break
-        elif state == RunState.PROBING:
-            # Need retest answer from student
-            sel = store.latest(run_id, "style_selection")
-            expl = store.latest(run_id, "explanation")
+        elif state == RunState.AWAITING_EXPERT or state == RunState.PROBING:
+            # Determine if waiting for retest (student) or instructor
+            awaiting_history = store.history(run_id, "awaiting_retest")
+            flag_history = store.history(run_id, "instructor_flag")
 
-            if sel and expl:
-                concept = sel["concept"]
-                attempt = sel["attempt"]
+            latest_awaiting_seq = awaiting_history[-1].seq if awaiting_history else -1
+            latest_flag_seq = flag_history[-1].seq if flag_history else -1
 
-                print(f"\n{'─'*50}")
-                print(f"Explanation for: {concept.replace('_', ' ')}")
-                print(f"{'─'*50}")
-                print(expl["text"])
-                print(f"{'─'*50}\n")
+            if latest_awaiting_seq > latest_flag_seq and awaiting_history:
+                # Need retest answer from student
+                sel = store.latest(run_id, "style_selection")
+                expl = store.latest(run_id, "explanation")
 
-                retest_q = get_retest_question(concept, attempt)
-                print(f"Retest: {retest_q.text}")
-                for opt, text in retest_q.options.items():
-                    print(f"  ({opt}) {text}")
+                if sel and expl:
+                    concept = sel["concept"]
+                    attempt = sel["attempt"]
 
-                while True:
-                    ans = input(f"Your answer [{'/'.join(retest_q.options.keys())}]: ").strip().lower()
-                    if ans in retest_q.options:
-                        break
-                    print("  Please enter a valid option.")
+                    print(f"\n{'─'*50}")
+                    print(f"Explanation for: {concept.replace('_', ' ').title()}")
+                    print(f"Style: {sel['selected_style'].title()} (Attempt {attempt})")
+                    print(f"{'─'*50}")
+                    print(expl["text"])
+                    print(f"{'─'*50}\n")
 
-                submit_retest(store, run_id, sel["student_id"], concept, ans, s)
+                    retest_q = get_retest_question(concept, attempt)
+                    print(f"Retest: {retest_q.text}")
+                    for opt, text in retest_q.options.items():
+                        print(f"  ({opt}) {text}")
+
+                    while True:
+                        ans = input(f"Your answer [{'/'.join(retest_q.options.keys())}]: ").strip().lower()
+                        if ans in retest_q.options:
+                            break
+                        print("  Please enter a valid option.")
+
+                    submit_retest(store, run_id, sel["student_id"], concept, ans, s)
+                    store.set_state(run_id, RunState.PROBING)
+                    continue
+                else:
+                    break
             else:
+                print("\nYour instructor has been notified. You will hear back soon.")
                 break
         else:
             break
