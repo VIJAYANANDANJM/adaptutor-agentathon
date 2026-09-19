@@ -1,0 +1,94 @@
+{
+  "attempt_1": {
+    "base_case": {
+      "concept": "base_case",
+      "text": "In def power(x, n): if n == 0: return 1; return x * power(x, n-1), what is the base case?",
+      "options": {
+        "a": "n == 1",
+        "b": "n == 0",
+        "c": "x == 0",
+        "d": "x == 1"
+      },
+      "correct": "b"
+    },
+    "recursive_step": {
+      "concept": "recursive_step",
+      "text": "Given def multiply(a, b): if b == 0: return 0; return a + multiply(a, b-1), what is multiply(3, 4)?",
+      "options": {
+        "a": "7",
+        "b": "12",
+        "c": "9",
+        "d": "0"
+      },
+      "correct": "b"
+    },
+    "call_stack": {
+      "concept": "call_stack",
+      "text": "At the deepest point of power(2, 3) where power(x, n) calls power(x, n-1) with base case n == 0, how many frames are on the stack?",
+      "options": {
+        "a": "3",
+        "b": "4",
+        "c": "5",
+        "d": "2"
+      },
+      "correct": "b"
+    },
+    "return_propagation": {
+      "concept": "return_propagation",
+      "text": "In power(2, 3), what does power(2, 1) return to power(2, 2)?",
+      "options": {
+        "a": "1",
+        "b": "2",
+        "c": "4",
+        "d": "8"
+      },
+      "correct": "b"
+    }
+  },
+  "attempt_2": {
+    "base_case": {
+      "concept": "base_case",
+      "text": "In def gcd(a, b): if b == 0: return a; return gcd(b, a % b), what is the base case?",
+      "options": {
+        "a": "a == 0",
+        "b": "b == 0",
+        "c": "a == b",
+        "d": "a % b == 0"
+      },
+      "correct": "b"
+    },
+    "recursive_step": {
+      "concept": "recursive_step",
+      "text": "Given def count_down(n): if n == 0: return 0; return 1 + count_down(n-1), what is count_down(5)?",
+      "options": {
+        "a": "4",
+        "b": "5",
+        "c": "6",
+        "d": "0"
+      },
+      "correct": "b"
+    },
+    "call_stack": {
+      "concept": "call_stack",
+      "text": "In sum_to(5) where sum_to(n) calls sum_to(n-1) with base case n == 0, how many frames are on the stack at the deepest point?",
+      "options": {
+        "a": "5",
+        "b": "6",
+        "c": "4",
+        "d": "7"
+      },
+      "correct": "b"
+    },
+    "return_propagation": {
+      "concept": "return_propagation",
+      "text": "In sum_to(3), what does sum_to(1) return to sum_to(2)?",
+      "options": {
+        "a": "1",
+        "b": "3",
+        "c": "2",
+        "d": "0"
+      },
+      "correct": "a"
+    }
+  }
+}

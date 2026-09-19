@@ -1,17 +1,18 @@
 # AdaptTutor Project State & Agent Handoff
 
 **Current Phase:** Phase 4: V1 Complete
-**Current Build Status:** Green (all tests passing)
-**Last Updated:** 2026-09-19T12:26:00+05:30
-**Last Completed Git Commit:** Initial V1 implementation (not yet committed)
+**Current Build Status:** Green (all 55 tests passing)
+**Last Updated:** 2026-09-19T14:01:00+05:30
+**Last Completed Git Commit:** `22b0d5a` fix: resolve retest prompt handling in interactive CLI
 
 ## 1. What Is Completed & Verified
 
 - [x] Spine files from agentic-slice-kit (records, store, runner, llm, budget, callback, config)
 - [x] Store extended with `all_versions_by_kind()` for population-level queries
 - [x] Config extended with `llm_mode` for mock/real provider switching
-- [x] Fixed 8-question quiz schema and data (2 per concept, 4 concepts)
-- [x] Fixed retest question bank with variant questions per concept
+- [x] Fixed 8-question quiz schema and data in `data/quiz.json` (2 per concept, 4 concepts)
+- [x] Fixed retest question bank with variant questions in `data/retest_questions.json`
+- [x] `remediation/questions.py` refactored to dynamically load and validate curriculum JSON files
 - [x] Pydantic schemas for all domain records
 - [x] MockExplanationProvider with canned style-specific responses
 - [x] RealLLMExplanationProvider calling slice.llm.complete()

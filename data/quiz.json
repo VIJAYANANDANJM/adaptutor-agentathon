@@ -1,0 +1,98 @@
+[
+  {
+    "id": "Q1",
+    "concept": "base_case",
+    "text": "What is the base case in factorial(n)?",
+    "options": {
+      "a": "n == 0",
+      "b": "n == 1",
+      "c": "n < 0",
+      "d": "none"
+    },
+    "correct": "a"
+  },
+  {
+    "id": "Q2",
+    "concept": "base_case",
+    "text": "What happens if countdown(n) has no base case?",
+    "options": {
+      "a": "returns 0",
+      "b": "infinite recursion",
+      "c": "returns n",
+      "d": "syntax error"
+    },
+    "correct": "b"
+  },
+  {
+    "id": "Q3",
+    "concept": "recursive_step",
+    "text": "Given def f(n): return n + f(n-1) with f(0)=0, what is f(3)?",
+    "options": {
+      "a": "3",
+      "b": "6",
+      "c": "9",
+      "d": "0"
+    },
+    "correct": "b"
+  },
+  {
+    "id": "Q4",
+    "concept": "recursive_step",
+    "text": "In sum_list([3,1,4]), how many times is sum_list called in total?",
+    "options": {
+      "a": "3",
+      "b": "4",
+      "c": "2",
+      "d": "1"
+    },
+    "correct": "b"
+  },
+  {
+    "id": "Q5",
+    "concept": "call_stack",
+    "text": "At the deepest point of factorial(4), how many frames are on the stack?",
+    "options": {
+      "a": "4",
+      "b": "5",
+      "c": "3",
+      "d": "1"
+    },
+    "correct": "b"
+  },
+  {
+    "id": "Q6",
+    "concept": "call_stack",
+    "text": "What is the first frame removed from the stack during factorial(3)?",
+    "options": {
+      "a": "factorial(3)",
+      "b": "factorial(1)",
+      "c": "factorial(0)",
+      "d": "factorial(2)"
+    },
+    "correct": "c"
+  },
+  {
+    "id": "Q7",
+    "concept": "return_propagation",
+    "text": "In factorial(3), what does factorial(1) return to factorial(2)?",
+    "options": {
+      "a": "1",
+      "b": "2",
+      "c": "3",
+      "d": "6"
+    },
+    "correct": "a"
+  },
+  {
+    "id": "Q8",
+    "concept": "return_propagation",
+    "text": "In fib(4) (naive), what value does fib(2) return?",
+    "options": {
+      "a": "1",
+      "b": "2",
+      "c": "0",
+      "d": "3"
+    },
+    "correct": "a"
+  }
+]
