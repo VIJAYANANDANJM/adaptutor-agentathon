@@ -1,0 +1,210 @@
+{
+  "module_id": "db_normalization",
+  "title": "CS3401 Database Management — Relational Normalization",
+  "description": "Fundamental normalization levels in relational databases: 1NF, 2NF, 3NF, and Boyce-Codd Normal Form (BCNF).",
+  "concepts": ["first_normal_form", "second_normal_form", "third_normal_form", "boyce_codd_normal_form"],
+  "concept_names": {
+    "first_normal_form": "First Normal Form (1NF)",
+    "second_normal_form": "Second Normal Form (2NF)",
+    "third_normal_form": "Third Normal Form (3NF)",
+    "boyce_codd_normal_form": "Boyce-Codd Normal Form (BCNF)"
+  },
+  "available_styles": ["worked_example", "analogy"],
+  "default_style": "worked_example",
+  "style_descriptions": {
+    "worked_example": "Step-by-step table decomposition demonstrating functional dependencies and anomaly elimination",
+    "analogy": "Real-world organizational analogies such as filing systems, cataloging, and office hierarchies"
+  },
+  "quiz": [
+    {
+      "id": "Q1",
+      "concept": "first_normal_form",
+      "text": "What is the primary requirement for a relation to be in First Normal Form (1NF)?",
+      "options": {
+        "a": "All non-key attributes depend fully on the primary key",
+        "b": "All attribute values must be atomic (indivisible)",
+        "c": "There are no transitive dependencies",
+        "d": "Every determinant is a candidate key"
+      },
+      "correct": "b"
+    },
+    {
+      "id": "Q2",
+      "concept": "first_normal_form",
+      "text": "A student table contains an attribute 'PhoneNumbers' storing a comma-separated list of numbers. Why does this violate 1NF?",
+      "options": {
+        "a": "It lacks a primary key",
+        "b": "It contains non-atomic repeating groups",
+        "c": "It has partial dependencies",
+        "d": "It violates referential integrity"
+      },
+      "correct": "b"
+    },
+    {
+      "id": "Q3",
+      "concept": "second_normal_form",
+      "text": "When is a table that is already in 1NF guaranteed to be in Second Normal Form (2NF)?",
+      "options": {
+        "a": "When the primary key consists of a single attribute",
+        "b": "When all attributes are foreign keys",
+        "c": "When there are no transitive dependencies",
+        "d": "When it has no NULL values"
+      },
+      "correct": "a"
+    },
+    {
+      "id": "Q4",
+      "concept": "second_normal_form",
+      "text": "In OrderDetails(OrderID, ProductID, Quantity, ProductName) with PK (OrderID, ProductID), ProductName depends only on ProductID. What anomaly is this?",
+      "options": {
+        "a": "Transitive dependency",
+        "b": "Partial dependency violating 2NF",
+        "c": "Multi-valued dependency",
+        "d": "Join dependency"
+      },
+      "correct": "b"
+    },
+    {
+      "id": "Q5",
+      "concept": "third_normal_form",
+      "text": "Which condition violates Third Normal Form (3NF) in a relation that is already in 2NF?",
+      "options": {
+        "a": "A non-prime attribute determining another non-prime attribute (transitive dependency)",
+        "b": "A composite candidate key",
+        "c": "A foreign key referencing a primary key",
+        "d": "An attribute having atomic domain values"
+      },
+      "correct": "a"
+    },
+    {
+      "id": "Q6",
+      "concept": "third_normal_form",
+      "text": "In Employee(EmpID, DeptID, DeptHead) with PK EmpID, EmpID -> DeptID and DeptID -> DeptHead. How should this be decomposed for 3NF?",
+      "options": {
+        "a": "Keep Employee as is",
+        "b": "Decompose into Employee(EmpID, DeptID) and Department(DeptID, DeptHead)",
+        "c": "Decompose into Employee(EmpID) and DeptHead(DeptHead)",
+        "d": "Merge EmpID and DeptHead into composite PK"
+      },
+      "correct": "b"
+    },
+    {
+      "id": "Q7",
+      "concept": "boyce_codd_normal_form",
+      "text": "What is the defining rule of Boyce-Codd Normal Form (BCNF)?",
+      "options": {
+        "a": "For every functional dependency X -> Y, X must be a superkey",
+        "b": "Every non-prime attribute must depend on all candidate keys",
+        "c": "No multi-valued dependencies exist",
+        "d": "Every attribute must be numeric"
+      },
+      "correct": "a"
+    },
+    {
+      "id": "Q8",
+      "concept": "boyce_codd_normal_form",
+      "text": "Why is BCNF considered strictly stronger than 3NF?",
+      "options": {
+        "a": "3NF allows X -> Y where Y is a prime attribute even if X is not a superkey, but BCNF forbids it",
+        "b": "BCNF eliminates multi-valued dependencies while 3NF does not",
+        "c": "BCNF requires lossy decomposition",
+        "d": "BCNF applies only to single-column keys"
+      },
+      "correct": "a"
+    }
+  ],
+  "retest_questions": {
+    "attempt_1": {
+      "first_normal_form": {
+        "concept": "first_normal_form",
+        "text": "A table stores Course(CourseID, Topics) where Topics contains ['Recursion', 'Sorting', 'Trees']. How do we make this 1NF compliant?",
+        "options": {
+          "a": "Create a composite key of (CourseID, Topics)",
+          "b": "Flatten so each row contains exactly one atomic topic",
+          "c": "Delete the Topics column",
+          "d": "Add a CourseName column"
+        },
+        "correct": "b"
+      },
+      "second_normal_form": {
+        "concept": "second_normal_form",
+        "text": "Given Enrolls(StudentID, CourseID, Grade, CourseFee) where PK is (StudentID, CourseID) and CourseID -> CourseFee. Why does this violate 2NF?",
+        "options": {
+          "a": "Grade depends on StudentID",
+          "b": "CourseFee depends on a proper subset of the composite candidate key",
+          "c": "StudentID is not unique",
+          "d": "CourseFee is a transitive dependency"
+        },
+        "correct": "b"
+      },
+      "third_normal_form": {
+        "concept": "third_normal_form",
+        "text": "In Customer(CustID, ZipCode, City) where CustID is PK and ZipCode -> City, what type of dependency violates 3NF?",
+        "options": {
+          "a": "Partial dependency",
+          "b": "Transitive dependency between non-prime attributes",
+          "c": "Multi-valued dependency",
+          "d": "Cyclic dependency"
+        },
+        "correct": "b"
+      },
+      "boyce_codd_normal_form": {
+        "concept": "boyce_codd_normal_form",
+        "text": "If relation R(A, B, C) has functional dependencies AB -> C and C -> B, and candidate keys are AB and AC, why does it violate BCNF?",
+        "options": {
+          "a": "In C -> B, C is not a superkey",
+          "b": "AB is not a superkey",
+          "c": "It violates 2NF",
+          "d": "B is not prime"
+        },
+        "correct": "a"
+      }
+    },
+    "attempt_2": {
+      "first_normal_form": {
+        "concept": "first_normal_form",
+        "text": "Which attribute representation always satisfies 1NF?",
+        "options": {
+          "a": "JSON array of values",
+          "b": "A single scalar primitive value per cell",
+          "c": "Comma-separated string of tags",
+          "d": "Nested relation table"
+        },
+        "correct": "b"
+      },
+      "second_normal_form": {
+        "concept": "second_normal_form",
+        "text": "To convert a relation from 1NF to 2NF, what must be removed?",
+        "options": {
+          "a": "Transitive dependencies",
+          "b": "Partial functional dependencies on composite candidate keys",
+          "c": "Foreign key constraints",
+          "d": "Duplicate primary keys"
+        },
+        "correct": "b"
+      },
+      "third_normal_form": {
+        "concept": "third_normal_form",
+        "text": "In relation R(X, Y, Z), if X -> Y and Y -> Z, removing transitive dependency X -> Z achieves which normal form?",
+        "options": {
+          "a": "1NF",
+          "b": "3NF",
+          "c": "5NF",
+          "d": "Unnormalized"
+        },
+        "correct": "b"
+      },
+      "boyce_codd_normal_form": {
+        "concept": "boyce_codd_normal_form",
+        "text": "Under BCNF, whenever a non-trivial functional dependency X -> Y holds, what MUST X be?",
+        "options": {
+          "a": "A non-prime attribute",
+          "b": "A superkey",
+          "c": "A foreign key",
+          "d": "A nullable column"
+        },
+        "correct": "b"
+      }
+    }
+  }
+}

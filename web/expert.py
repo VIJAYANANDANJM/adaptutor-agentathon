@@ -251,6 +251,7 @@ HEADER = """
     <nav class="nav">
       <a href="/" class="{esc_cls}">Escalations</a>
       <a href="/students" class="{stu_cls}">Student Roster</a>
+      <a href="/curriculum" class="{cur_cls}">Curriculum Modules</a>
     </nav>
   </div>
 </div>
@@ -260,7 +261,8 @@ HEADER = """
 def _page(title: str, body: str, active: str = "escalations") -> HTMLResponse:
     esc_cls = "active" if active == "escalations" else ""
     stu_cls = "active" if active == "students" else ""
-    header = HEADER.format(esc_cls=esc_cls, stu_cls=stu_cls)
+    cur_cls = "active" if active == "curriculum" else ""
+    header = HEADER.format(esc_cls=esc_cls, stu_cls=stu_cls, cur_cls=cur_cls)
     full = (
         f"<!doctype html><meta charset='utf-8'>"
         f"<meta name='viewport' content='width=device-width,initial-scale=1'>"
@@ -488,3 +490,71 @@ def student_roster():
         f"<div class='student-grid'>{cards}</div>",
         active="students",
     )
+
+
+# ── Curriculum Modules Dashboard (/curriculum) ────────────────────────────
+
+@app.get("/curriculum", response_class=HTMLResponse)
+def curriculum_page():
+    from remediation.curriculum import list_modules
+    modules = list_modules()
+    cards = ""
+    for m in modules:
+        c_pills = " ".join(f"<span class='pill pill-style'>{c.replace('_', ' ').title()}</span>" for c in m.get("concepts", []))
+        s_pills = " ".join(f"<span class='pill pill-strong'>{s.title()}</span>" for s in m.get("available_styles", []))
+        cards += (
+            f"<div class='card'>"
+            f"<h2>📚 {html.escape(m['title'])}</h2>"
+            f"<p class='sub' style='margin-bottom:0.6rem'>{html.escape(m.get('description', ''))}</p>"
+            f"<div style='margin-bottom:0.5rem'><strong>Concepts ({m['concept_count']}):</strong> {c_pills}</div>"
+            f"<div><strong>Available Styles:</strong> {s_pills}</div>"
+            f"<div style='margin-top:0.8rem;font-size:0.85rem;color:var(--text-dim)'>CLI command: <code>python run.py session &lt;student_id&gt; --module {m['module_id']}</code></div>"
+            f"</div>"
+        )
+
+    form = (
+        "<div class='card' style='border:1px solid var(--accent);background:var(--surface-2)'>"
+        "<h2>✨ Generate New Curriculum Module with AI</h2>"
+        "<p class='sub'>Enter any topic or subject syllabus. OpenRouter will generate an 8-question diagnostic quiz, "
+        "independent retest bank, and domain-appropriate explanation styles.</p>"
+        "<form method='post' action='/curriculum/generate'>"
+        "<div style='margin-bottom:0.8rem'>"
+        "<label style='display:block;font-weight:600;font-size:0.88rem;margin-bottom:0.3rem'>Topic / Course Title:</label>"
+        "<input type='text' name='topic' required placeholder='e.g. Operating Systems — Virtual Memory & Paging' "
+        "style='width:100%;padding:0.6rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font:inherit;'>"
+        "</div>"
+        "<div style='margin-bottom:0.8rem'>"
+        "<label style='display:block;font-weight:600;font-size:0.88rem;margin-bottom:0.3rem'>Description / Syllabus Context (optional):</label>"
+        "<textarea name='description' placeholder='e.g. Page tables, TLB, page replacement algorithms, and thrashing...' "
+        "style='min-height:5rem'></textarea>"
+        "</div>"
+        "<button type='submit' style='background:var(--accent)'>Generate Curriculum with AI</button>"
+        "</form>"
+        "</div>"
+    )
+
+    return _page(
+        "AdaptTutor — Curriculum Modules",
+        f"<h1>Course Curriculum Modules</h1>"
+        f"<p class='sub'>AdaptTutor is topic-agnostic. Select an existing module or generate a new one with AI.</p>"
+        f"{form}"
+        f"<h2 style='margin:1.5rem 0 0.8rem'>Published Modules ({len(modules)})</h2>"
+        f"{cards}",
+        active="curriculum"
+    )
+
+
+@app.post("/curriculum/generate")
+async def handle_generate_curriculum(request: Request):
+    raw_body = (await request.body()).decode("utf-8")
+    import urllib.parse
+    params = urllib.parse.parse_qs(raw_body)
+    topic = params.get("topic", [""])[0].strip()
+    desc = params.get("description", [""])[0].strip()
+    if not topic:
+        return RedirectResponse("/curriculum", status_code=303)
+
+    from remediation.curriculum_generator import generate_curriculum
+    generate_curriculum(topic, description=desc)
+    return RedirectResponse("/curriculum", status_code=303)
+

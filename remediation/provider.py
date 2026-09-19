@@ -23,7 +23,8 @@ class ExplanationProvider(ABC):
     def explain(self, *, student_id: str, concept: str, style: str,
                 wrong_answer: str, correct_answer: str,
                 question_text: str, budget: Budget,
-                settings: Settings) -> ExplanationPayload:
+                settings: Settings, topic: str = "",
+                style_instruction: str = "") -> ExplanationPayload:
         ...
 
 
@@ -99,13 +100,15 @@ class MockExplanationProvider(ExplanationProvider):
     def explain(self, *, student_id: str, concept: str, style: str,
                 wrong_answer: str, correct_answer: str,
                 question_text: str, budget: Budget,
-                settings: Settings) -> ExplanationPayload:
+                settings: Settings, topic: str = "",
+                style_instruction: str = "") -> ExplanationPayload:
         budget.check_tokens()
         budget.record_tokens(0)
 
+        topic_label = topic or "the concept"
         text = self.MOCK_EXPLANATIONS.get(
             (concept, style),
-            f"[Mock {style} explanation for {concept}]"
+            f"[Step-by-step {style.title()} explanation for {concept.replace('_', ' ').title()} in {topic_label}]"
         )
 
         return ExplanationPayload(
@@ -122,21 +125,25 @@ class RealLLMExplanationProvider(ExplanationProvider):
     def explain(self, *, student_id: str, concept: str, style: str,
                 wrong_answer: str, correct_answer: str,
                 question_text: str, budget: Budget,
-                settings: Settings) -> ExplanationPayload:
+                settings: Settings, topic: str = "",
+                style_instruction: str = "") -> ExplanationPayload:
         from slice import llm
 
-        prompt_dir = Path(__file__).parent / "prompts"
-        prompt_file = prompt_dir / f"{style}.md"
-        style_instruction = prompt_file.read_text() if prompt_file.exists() else ""
+        if not style_instruction:
+            prompt_dir = Path(__file__).parent / "prompts"
+            prompt_file = prompt_dir / f"{style}.md"
+            style_instruction = prompt_file.read_text() if prompt_file.exists() else f"Explain clearly using {style} approach."
 
+        topic_str = topic or "recursion in Python"
         messages = [
             {"role": "system", "content": (
-                "You are a patient CS tutor helping a second-year B.E. CSE student "
-                "understand recursion in Python. You must explain using the specified style. "
+                f"You are a patient university CS tutor helping a student "
+                f"understand {topic_str}. You must explain using the specified style. "
                 "Be concise and specific to the student's error.\n\n"
-                f"Style instructions:\n{style_instruction}"
+                f"Style instructions ({style}):\n{style_instruction}"
             )},
             {"role": "user", "content": (
+                f"Topic: {topic_str}\n"
                 f"The student answered '{wrong_answer}' to the question:\n"
                 f"{question_text}\n\n"
                 f"The correct answer is '{correct_answer}'.\n"
