@@ -37,6 +37,7 @@
 
 - **Multi-Module Curriculum Engine**: Seamless support for any subject (Python Recursion, Relational Normalization, Operating Systems, etc.) in `data/modules/`.
 - **AI Curriculum Generator**: OpenRouter automatically creates diagnostic quizzes, retest banks, and domain explanation styles from an instructor topic prompt.
+- **Self-Contained Module Prompts**: Each curriculum JSON encapsulates its own `style_descriptions`. The AI generator (or instructor) embeds pedagogical style rules directly inside the `.json`. The runtime engine (`remediation/provider.py`) dynamically constructs the full pedagogical prompt with guardrails, rendering `remediation/prompts/*.md` as an optional legacy fallback. Zero manual prompt file editing is required for new courses.
 - **Interactive Student Catalog**: In CLI, students view mastery across subjects, receive automated recommendations, and choose modules.
 - **Persistent Learner Model**: Explicit concept-wise mastery % (0-100%), weak/strong concept tags, and intervention history tracking across sessions in SQLite.
 - **Evidence-Based Adaptive Selector**: Deterministic mathematical style ranker with zero LLM grading/selection.
@@ -64,3 +65,28 @@
 - `SLICE_MODEL=openrouter/free`
 - Instructor Web Server: `python -m uvicorn web.expert:app --host 127.0.0.1 --port 8000 --reload`
 - Active SQLite Database: `run.db` (append-only events + runs + questions + learner model)
+
+## 5. Architectural Decision: Dynamic Prompts vs. `remediation/prompts/` Directory
+
+### Context
+In V1, explanation prompts were static markdown files on disk (`remediation/prompts/analogy.md` and `remediation/prompts/trace.md`) with hardcoded references to recursion.
+
+### Upgraded Architecture in V2 / Multi-Module
+1. **JSON as Single Source of Truth**:
+   - Each curriculum package in `data/modules/<module_id>.json` contains a `style_descriptions` mapping:
+     ```json
+     "style_descriptions": {
+       "worked_example": "Step-by-step table decomposition showing functional dependencies...",
+       "analogy": "Real-world organizational analogies such as filing systems..."
+     }
+     ```
+2. **Authoring Automation**:
+   - When an instructor uses the AI Curriculum Generator (`remediation/curriculum_generator.py` or `/curriculum` web UI), OpenRouter automatically authors the domain-tailored `style_descriptions` directly inside the `.json`.
+   - When an instructor creates a module manually, they provide 1–2 descriptive sentences in the JSON.
+3. **Runtime Dynamic Prompt Construction**:
+   - `remediation/provider.py` receives the active module's `title`, concept display name, and `style_instruction` dynamically.
+   - It wraps these into a rigorous system prompt with universal pedagogical rules (diagnosing specific error, word count under 180 words, non-condescending tone, conceptual clarity without spoiling retest).
+4. **Role of `remediation/prompts/`**:
+   - The `.md` files in `remediation/prompts/` are preserved **strictly as a legacy fallback** for the base recursion module.
+   - **No developer or instructor ever needs to create, edit, or maintain `.md` prompt files when introducing new subjects.** Every domain (from Database Normalization to OS Paging to Physics) is completely self-contained in its JSON package.
+
