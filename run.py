@@ -516,7 +516,8 @@ def main():
     elif cmd == "list":
         list_runs()
     elif cmd == "doctor":
-        os.execvp(sys.executable, [sys.executable, "scripts/doctor.py"])
+        import subprocess
+        subprocess.run([sys.executable, os.path.join(os.path.dirname(__file__), "scripts", "doctor.py")])
     else:
         print(__doc__)
         sys.exit(1)
