@@ -65,6 +65,8 @@ for pkg in ("httpx", "fastapi", "uvicorn"):
 env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")
 if os.path.exists(env_path):
     line(OK, ".env found")
+    from slice.config import load_env
+    load_env(env_path)
 else:
     line(WARN, ".env not found", "Not needed for LLM_MODE=mock. Copy .env.example for real mode.")
 
