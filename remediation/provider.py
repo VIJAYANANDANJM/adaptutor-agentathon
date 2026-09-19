@@ -148,24 +148,39 @@ class RealLLMExplanationProvider(ExplanationProvider):
             )},
         ]
 
-        result = llm.complete(
-            settings=settings,
-            budget=budget,
-            messages=messages,
-            schema=ExplanationPayload,
-            step=f"explain_{concept}_{style}",
-        )
+        try:
+            result = llm.complete(
+                settings=settings,
+                budget=budget,
+                messages=messages,
+                schema=ExplanationPayload,
+                step=f"explain_{concept}_{style}",
+            )
 
-        if isinstance(result, ExplanationPayload):
-            result.student_id = student_id
-            return result
+            if isinstance(result, ExplanationPayload):
+                result.student_id = student_id
+                return result
 
-        return ExplanationPayload(
-            student_id=student_id,
-            concept=concept,
-            style=style,
-            text=str(result),
-        )
+            return ExplanationPayload(
+                student_id=student_id,
+                concept=concept,
+                style=style,
+                text=str(result),
+            )
+        except Exception as e:
+            # Resilient fallback: deliver a clean explanation rather than crashing the session
+            print(f"  [AI Tutor Warning] Live model call encountered '{type(e).__name__}'. Using fallback remediation.")
+            mock = MockExplanationProvider()
+            return mock.explain(
+                student_id=student_id,
+                concept=concept,
+                style=style,
+                wrong_answer=wrong_answer,
+                correct_answer=correct_answer,
+                question_text=question_text,
+                budget=budget,
+                settings=settings,
+            )
 
 
 def get_provider(mode: str) -> ExplanationProvider:

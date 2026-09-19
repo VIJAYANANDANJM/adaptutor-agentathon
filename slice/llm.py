@@ -93,23 +93,46 @@ def complete(
         if schema is not None:
             body["response_format"] = {"type": "json_object"}
 
-        t0 = time.time()
-        try:
-            r = httpx.post(f"{API}/chat/completions", json=body, timeout=timeout,
-                           headers={"Authorization": f"Bearer {settings.api_key}"})
-        except httpx.RequestError as e:
-            if role == "fallback":
-                raise ModelError(
-                    f"Both models unreachable ({e}). Run "
-                    "`python scripts/doctor.py` - this is usually the network "
-                    "or a provider outage, not your code.") from e
+        headers = {
+            "Authorization": f"Bearer {settings.api_key}",
+            "HTTP-Referer": "https://github.com/VIJAYANANDANJM/adaptutor-agentathon",
+            "X-Title": "AdaptTutor",
+        }
+
+        # Waiting / retry loop for rate-limits (429) or transient provider pauses (502, 503)
+        max_retries = 3
+        r = None
+        for retry_idx in range(max_retries):
+            try:
+                r = httpx.post(f"{API}/chat/completions", json=body, timeout=timeout, headers=headers)
+            except (httpx.RequestError, httpx.TimeoutException) as e:
+                if retry_idx < max_retries - 1:
+                    time.sleep(2 * (retry_idx + 1))
+                    continue
+                if role == "fallback":
+                    raise ModelError(
+                        f"Both models unreachable ({e}). Run "
+                        "`python scripts/doctor.py` - this is usually the network "
+                        "or a provider outage, not your code.") from e
+                break
+
+            if r is not None and r.status_code in (429, 500, 502, 503, 504):
+                if retry_idx < max_retries - 1:
+                    time.sleep(2 * (retry_idx + 1))
+                    continue
+                if role == "primary":
+                    break
+                raise ModelError(f"{mid} returned HTTP {r.status_code}: {r.text[:300]}")
+            break
+
+        if r is None:
             continue
 
         if r.status_code == 402:
             raise _classify_402(_safe_json(r))
-        if r.status_code in (429, 500, 502, 503) and role == "primary":
-            continue
         if r.status_code != 200:
+            if role == "primary" and len(attempts) > 1:
+                continue
             raise ModelError(f"{mid} returned HTTP {r.status_code}: {r.text[:300]}")
 
         data = r.json()
@@ -154,13 +177,25 @@ def _safe_json(r: httpx.Response) -> dict:
 
 def _strip_fence(text: str) -> str:
     t = (text or "").strip()
-    if t.startswith("```"):
+    # 1. Look for markdown code fence containing JSON
+    if "```" in t:
         parts = t.split("```")
-        if len(parts) > 1:
-            t = parts[1]
-            if t.lstrip().lower().startswith("json"):
-                t = t.lstrip()[4:]
-    return t.strip()
+        for i in range(1, len(parts), 2):
+            candidate = parts[i].strip()
+            if candidate.lower().startswith("json"):
+                candidate = candidate[4:].strip()
+            if "{" in candidate and "}" in candidate:
+                f = candidate.find("{")
+                l = candidate.rfind("}")
+                return candidate[f:l + 1].strip()
+
+    # 2. Extract outermost JSON object { ... }
+    first_brace = t.find("{")
+    last_brace = t.rfind("}")
+    if first_brace != -1 and last_brace != -1 and last_brace > first_brace:
+        return t[first_brace:last_brace + 1].strip()
+
+    return t
 
 
 def _parse(text: str, schema: Type[BaseModel]):
