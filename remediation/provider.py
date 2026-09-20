@@ -115,7 +115,8 @@ class RealLLMExplanationProvider(ExplanationProvider):
                 f"Pedagogical Task:\n"
                 f"1. Explain specifically why choosing [{wrong_answer.upper()}] \"{wrong_text}\" is incorrect.\n"
                 f"2. Explain why [{correct_answer.upper()}] \"{correct_text}\" is the correct reasoning.\n"
-                f"3. Strictly adhere to the '{style}' pedagogical style rules provided in system instructions.\n\n"
+                f"3. Strictly adhere to the '{style}' pedagogical style rules provided in system instructions.\n"
+                f"4. Keep the explanation clear, focused, and under 300 words without unnecessary fluff.\n\n"
                 f"Return a JSON object with fields:\n"
                 f"  \"student_id\": \"{student_id}\",\n"
                 f"  \"concept\": \"{concept}\",\n"
@@ -124,24 +125,43 @@ class RealLLMExplanationProvider(ExplanationProvider):
             )},
         ]
 
-        result = llm.complete(
-            settings=settings,
-            budget=budget,
-            messages=messages,
-            schema=ExplanationPayload,
-            step=f"explain_{concept}_{style}",
-        )
+        try:
+            result = llm.complete(
+                settings=settings,
+                budget=budget,
+                messages=messages,
+                schema=ExplanationPayload,
+                step=f"explain_{concept}_{style}",
+            )
 
-        if isinstance(result, ExplanationPayload):
-            result.student_id = student_id
-            return result
+            if isinstance(result, ExplanationPayload):
+                result.student_id = student_id
+                return result
 
-        return ExplanationPayload(
-            student_id=student_id,
-            concept=concept,
-            style=style,
-            text=str(result),
-        )
+            return ExplanationPayload(
+                student_id=student_id,
+                concept=concept,
+                style=style,
+                text=str(result),
+            )
+        except Exception as exc:
+            import logging
+            logging.getLogger(__name__).warning(
+                f"[ExplanationProvider Warning] LLM call failed ({type(exc).__name__}: {exc}). "
+                "Using pedagogical fallback explanation."
+            )
+            fallback_text = (
+                f"**Understanding {concept_name}** ({style.title()} perspective):\n\n"
+                f"Your selected answer [{wrong_answer.upper()}] \"{wrong_text}\" is incorrect.\n\n"
+                f"The correct principle is [{correct_answer.upper()}]: \"{correct_text}\".\n\n"
+                f"{concept_desc if concept_desc else f'Review the fundamental rules of {concept_name} in {topic_str}.'}"
+            )
+            return ExplanationPayload(
+                student_id=student_id,
+                concept=concept,
+                style=style,
+                text=fallback_text,
+            )
 
 
 def get_provider(mode: str = "real") -> ExplanationProvider:
