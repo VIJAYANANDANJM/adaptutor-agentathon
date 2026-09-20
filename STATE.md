@@ -1,91 +1,86 @@
 # AdaptTutor Project State & Agent Handoff
 
-**Current Phase:** Phase 6: Topic-Agnostic Dynamic Multi-Module Curriculum
-**Current Build Status:** Green (all 101 tests passing)
-**Last Updated:** 2026-09-19T17:05:00+05:30
-**Active Git Branch:** `feat/topic-agnostic-curriculum`
-**Last Completed Git Commit:** `6ddee1c` feat: display instructor guidance banner and transition feedback on session resumption
-**Active Repository Remote:** `https://github.com/VIJAYANANDANJM/adaptutor-agentathon.git`
+**Current Phase:** Phase 12: Production Freeze & Verified Judge Readiness  
+**Current Build Status:** Green (all 125 tests passing, 100% pass rate)  
+**Last Updated:** 2026-09-20T12:10:00+05:30  
+**Active Git Branch:** `main` (Production Core, Multi-Module Engine, Context-Enriched Remediation, Guided Practice)  
+**Active Repository Remote:** `https://github.com/VIJAYANANDANJM/adaptutor-agentathon.git`  
+**Judge Entrypoint:** [`RUN.md`](file:///c:/Users/vijay/OneDrive/Desktop/Agentathon-2026/adapt-tutor/RUN.md) (`python run.py demo`)
+
+---
 
 ## 1. What Is Completed & Verified
 
-- [x] Spine files from agentic-slice-kit (records, store, runner, llm, budget, callback, config)
-- [x] Store extended with `all_versions_by_kind()` for population-level queries
-- [x] Config configured with `LLM_MODE=real`
-- [x] Fixed 8-question quiz schema and data in `data/quiz.json` (2 per concept, 4 concepts)
-- [x] Fixed retest question bank with variant questions in `data/retest_questions.json`
-- [x] Dynamic multi-module curriculum loader in `remediation/curriculum.py`
-- [x] Pre-packaged curriculum modules: `data/modules/python_recursion.json` and `data/modules/db_normalization.json`
-- [x] AI Curriculum Generator (`remediation/curriculum_generator.py`) using OpenRouter and mock fallback
-- [x] Pydantic schemas for all domain records (`remediation/schema.py`)
-- [x] RealLLMExplanationProvider calling `slice.llm.complete()` with OpenRouter (`openrouter/free`)
-- [x] Exponential backoff retry and 120s timeout on OpenRouter completion
-- [x] Remediation state machine (QUIZ→DIAGNOSE→SELECT→EXPLAIN→RETEST→EVALUATE)
-- [x] Backward loop (failed retest → SELECT with alternate style)
-- [x] Instructor escalation (both styles fail → AWAITING_EXPERT)
-- [x] Instructor response handling & prominent guidance banner shown to student upon session resumption
-- [x] Adaptive style selection with dynamic module styles ($0.7 \times \text{StudentRate} + 0.3 \times \text{CohortRate}$)
-- [x] Persistent Learner Model (`remediation/learner.py` + `slice/store.py` SQLite learner tables)
-- [x] Visible Adaptation UI Cards (`run.py` knowledge gap, retest evaluation, adaptation, and escalation cards)
-- [x] Interactive Student Course Catalog CLI (`run.py session <student_id>` + `--module <id>` flag + resume vs new session)
-- [x] Instructor Web Panel (`web/expert.py`) with Escalations, Student Roster (`/students`), and Curriculum Manager (`/curriculum`)
-- [x] Comprehensive Verification Tests (`tests/test_curriculum.py`, `tests/test_learner.py`, `tests/test_selector.py`)
-- [x] All 101 tests passing (`pytest -v`)
+- [x] **Agentic Slice Kit Spine**: Records, store, runner, llm, budget, callback, config.
+- [x] **Store Extensions**: Append-only SQLite schema with triggers preventing mutation; `all_versions_by_kind()` for cohort queries; `learner_profiles` and `intervention_history` tables.
+- [x] **Isolated LLM Choke Point**: Single `complete()` in `slice/llm.py` with 3-tier exponential backoff, single-pass self-repair, and markdown fence extractors.
+- [x] **Topic-Agnostic Curriculum Engine**: Modular curriculum loader (`remediation/curriculum.py`) supporting:
+  - `python_recursion.json` (CS3301 Python Recursion & Stack Frames)
+  - `db_normalization.json` (CS330 Relational Database Normalization: 1NF, 2NF, 3NF, BCNF)
+  - `operating_systems_virtual.json` (CS340 Virtual Memory & Paging)
+  - `iot_mqtt.json` (IoT Protocol & QoS Messaging)
+- [x] **AI Curriculum Generator (`remediation/curriculum_generator.py`)**: Automatic generation of 4-concept courses with diagnostic quizzes, retest pools, and pedagogical rules via OpenRouter.
+- [x] **Feature 1: Context-Enriched Explanations & Personalized Prompts**:
+  - Full options breakdown injected into prompt.
+  - Distractor tagging: `[STUDENT'S WRONG CHOICE]` vs `[CORRECT ANSWER]`.
+  - Student mastery % and attempt history injected.
+  - 3-part structured analogy scaffolding (Physical Anchor → Misconception Hook → Resolution).
+  - *Evidence*: [`docs/evidence/walkthrough-1.md`](file:///c:/Users/vijay/OneDrive/Desktop/Agentathon-2026/adapt-tutor/docs/evidence/walkthrough-1.md) (Roopa Varshni, Commit `55c4908`).
+- [x] **Feature 2: Mistake-Specific Failed Retest Feedback**:
+  - `remediation/feedback.py` diagnoses the exact misconception behind the learner's chosen retest option.
+  - Terminal card `🔍 RETEST FEEDBACK — MISTAKE DIAGNOSIS` with `Why your answer was wrong` and `What to remember`.
+  - Deterministic concept-aware fallback when LLM is offline or times out.
+  - *Evidence*: [`docs/evidence/walkthrough-2.md`](file:///c:/Users/vijay/OneDrive/Desktop/Agentathon-2026/adapt-tutor/docs/evidence/walkthrough-2.md) (Jeeva S, Commit `6a9308c`).
+- [x] **Feature 3: Clear Learning State & Next Goal Presentation**:
+  - Centralized pedagogical goal service in `remediation/goals.py`.
+  - Terminal card `🎯 YOUR LEARNING STATE` showing concept, mastery progress bar, previous approach `❌` on retries, adaptation reason, and concrete goal.
+  - Terminal card `✓ CONCEPT IMPROVED` showing `old% ➔ new%` delta, goal achieved confirmation, and clear next step pointer.
+  - *Evidence*: [`docs/evidence/walkthrough-3.md`](file:///c:/Users/vijay/OneDrive/Desktop/Agentathon-2026/adapt-tutor/docs/evidence/walkthrough-3.md) (Sripramod Y, Commit `18cada7`).
+- [x] **Feature 4: Retest Pool Exhaustion → Guided Practice → Fresh Retest**:
+  - Question tracking per concept in SQLite to ensure questions never repeat while unused questions remain.
+  - Retest pool exhaustion detection triggers `⚠️ RETEST POOL EXHAUSTED`.
+  - Concept-specific Guided Practice (`CURATED_GUIDED_PRACTICE`) with 2–4 reasoning steps and immediate feedback.
+  - Strict **1-retry bound per step** with targeted hints preventing infinite loops.
+  - Completion card `✓ GUIDED PRACTICE COMPLETE` followed by an independent `Fresh Retest`.
+  - State persistence and process crash resumption.
+  - *Evidence*: [`docs/evidence/stress-testing.md`](file:///c:/Users/vijay/OneDrive/Desktop/Agentathon-2026/adapt-tutor/docs/evidence/stress-testing.md) (Vikram Dharshan, Commit `4654f9d`).
+- [x] **Persistent Learner Model (`remediation/learner.py`)**: EMA mastery calculation ($0.25$ gap init, $+0.45$ pass, $-0.15$ fail), classification (weak/strong), and style win-rate tracking.
+- [x] **Evidence-Based Style Selector (`remediation/selector.py`)**: Multi-armed bandit formula ($0.7 \times \text{StudentRate} + 0.3 \times \text{CohortRate}$).
+- [x] **Human-in-the-Loop Web Portal (`web/expert.py`)**: FastAPI interface at `http://127.0.0.1:8000` with pending escalations, student mastery roster (`/students`), and curriculum creator.
+- [x] **Interactive CLI (`run.py`)**: Module selection catalog, interactive student sessions (`python run.py session <student_id>`), past run replays, and diagnostics (`python run.py doctor`).
+- [x] **Turnkey Judge Demo (`python run.py demo` & `RUN.md`)**: Self-driving 3-persona demo executed with real OpenRouter LLM, verified clean run (exit code 0).
+- [x] **Human Testing Certification**: Master declaration in [`docs/USER_TESTING_DECLARATION.md`](file:///c:/Users/vijay/OneDrive/Desktop/Agentathon-2026/adapt-tutor/docs/USER_TESTING_DECLARATION.md).
 
-## 2. Completed Milestones
+---
 
-- **Multi-Module Curriculum Engine**: Seamless support for any subject (Python Recursion, Relational Normalization, Operating Systems, etc.) in `data/modules/`.
-- **AI Curriculum Generator**: OpenRouter automatically creates diagnostic quizzes, retest banks, and domain explanation styles from an instructor topic prompt.
-- **Self-Contained Module Prompts**: Each curriculum JSON encapsulates its own `style_descriptions`. The AI generator (or instructor) embeds pedagogical style rules directly inside the `.json`. The runtime engine (`remediation/provider.py`) dynamically constructs the full pedagogical prompt with guardrails, rendering `remediation/prompts/*.md` as an optional legacy fallback. Zero manual prompt file editing is required for new courses.
-- **Interactive Student Catalog**: In CLI, students view mastery across subjects, receive automated recommendations, and choose modules.
-- **Persistent Learner Model**: Explicit concept-wise mastery % (0-100%), weak/strong concept tags, and intervention history tracking across sessions in SQLite.
-- **Evidence-Based Adaptive Selector**: Deterministic mathematical style ranker with zero LLM grading/selection.
-- **Visible Adaptation UI**: Structured terminal cards rendering Knowledge Gap, Current Mastery, Previous Interventions, Selected Style, Reason, and Post-Retest Mastery Change ($X\% \to Y\%$).
-- **Instructor Dashboard**: Web UI view for student mastery analytics, style efficacy, active escalations, and curriculum creator at `http://127.0.0.1:8000`.
+## 2. Test Health & Verification Summary
 
-## 3. Current Test Health Summary
+- **Total Tests:** **125** | **Passed:** **125** | **Failed:** **0** (100% Pass Rate across 12 test suites)
+- **Execution Time:** ~18.5 seconds
+- **Command:** `python -m pytest`
+- **Pre-flight Diagnostics:** `python run.py doctor` reports **All Clear — environment ready**.
 
-- Total Tests: 101 | Passed: 101 | Failed: 0
-- Last command run: `python -m pytest -v`
-- Test coverage:
-  - `test_store.py` (13 tests): Persistence, append-only triggers, cross-connection
-  - `test_runner.py` (4 tests): State machine, max steps, suspension
-  - `test_budget.py` (8 tests): Token fences, attempts, restart survival
-  - `test_callback.py` (7 tests): Suspension, resume, write-once, timeout
-  - `test_remediation.py` (15 tests): Quiz scoring, style selection, real LLM provider, question bank
-  - `test_scenarios.py` (8 tests): Priya, Ravi, Karthik E2E + revision limits + process interruption
-  - `test_learner.py` (22 tests): Mastery init, retest updates, instructor updates, classification, style win-rate, persistence
-  - `test_selector.py` (14 tests): Formula verification, different histories -> different selections, attempt 2 never repeats, fallback behavior, demo personas, reasons
-  - `test_curriculum.py` (6 tests): Module listing, dynamic module loading, multi-module scoring, AI mock generation, and end-to-end multi-module remediation
+### Test Suite Breakdown:
+1. `tests/test_budget.py` (8 tests): Token usage, budget fences, restart survival.
+2. `tests/test_callback.py` (7 tests): Suspension, resume, write-once, timeout.
+3. `tests/test_curriculum.py` (6 tests): Module listing, dynamic loading, multi-module scoring, AI mock generator.
+4. `tests/test_feedback.py` (6 tests): Mistake diagnosis generation, option text extraction, deterministic fallback.
+5. `tests/test_goals.py` (8 tests): Pedagogical goal retrieval, state card formatting, retry context, session loop.
+6. `tests/test_learner.py` (22 tests): Mastery init, retest updates, instructor override, classification, style win-rate.
+7. `tests/test_practice.py` (9 tests): Pool exhaustion detection, guided steps, 1-retry bound, fresh retests, crash resumption.
+8. `tests/test_remediation.py` (16 tests): Quiz scoring, style selection, question bank integrity, enriched prompts.
+9. `tests/test_runner.py` (4 tests): State machine transitions, max step bounding, run state lifecycle.
+10. `tests/test_scenarios.py` (8 tests): End-to-end Priya, Ravi, Karthik journeys, crash survival, revision limits.
+11. `tests/test_selector.py` (14 tests): Formula validation, student vs cohort weighting, Attempt 2 switching.
+12. `tests/test_store.py` (13 tests): SQLite append-only triggers, version sequencing, cross-connection reads.
 
-## 4. Current Environment & Configuration
+---
 
-- `LLM_MODE=real` (OpenRouter integration via `.env`)
-- `SLICE_MODEL=openrouter/free`
-- Instructor Web Server: `python -m uvicorn web.expert:app --host 127.0.0.1 --port 8000 --reload`
-- Active SQLite Database: `run.db` (append-only events + runs + questions + learner model)
+## 3. Current Configuration & Freeze Readiness
 
-## 5. Architectural Decision: Dynamic Prompts vs. `remediation/prompts/` Directory
-
-### Context
-In V1, explanation prompts were static markdown files on disk (`remediation/prompts/analogy.md` and `remediation/prompts/trace.md`) with hardcoded references to recursion.
-
-### Upgraded Architecture in V2 / Multi-Module
-1. **JSON as Single Source of Truth**:
-   - Each curriculum package in `data/modules/<module_id>.json` contains a `style_descriptions` mapping:
-     ```json
-     "style_descriptions": {
-       "worked_example": "Step-by-step table decomposition showing functional dependencies...",
-       "analogy": "Real-world organizational analogies such as filing systems..."
-     }
-     ```
-2. **Authoring Automation**:
-   - When an instructor uses the AI Curriculum Generator (`remediation/curriculum_generator.py` or `/curriculum` web UI), OpenRouter automatically authors the domain-tailored `style_descriptions` directly inside the `.json`.
-   - When an instructor creates a module manually, they provide 1–2 descriptive sentences in the JSON.
-3. **Runtime Dynamic Prompt Construction**:
-   - `remediation/provider.py` receives the active module's `title`, concept display name, and `style_instruction` dynamically.
-   - It wraps these into a rigorous system prompt with universal pedagogical rules (diagnosing specific error, word count under 180 words, non-condescending tone, conceptual clarity without spoiling retest).
-4. **Role of `remediation/prompts/`**:
-   - The `.md` files in `remediation/prompts/` are preserved **strictly as a legacy fallback** for the base recursion module.
-   - **No developer or instructor ever needs to create, edit, or maintain `.md` prompt files when introducing new subjects.** Every domain (from Database Normalization to OS Paging to Physics) is completely self-contained in its JSON package..
-
+- **Environment**: Python 3.10+ / 3.13.4, Windows UTF-8 console output configured.
+- **LLM Engine**: `LLM_MODE=real`, `OPENROUTER_API_KEY` configured in `.env`.
+- **Model Endpoints**: `SLICE_MODEL=openrouter/free`, `SLICE_FALLBACK_MODEL=openrouter/free`.
+- **Database**: `run.db` (SQLite append-only audit trail).
+- **Web Portal**: `python -m uvicorn web.expert:app --host 127.0.0.1 --port 8000`.
+- **Repository Cleanliness**: Working tree clean, zero untracked or stray files.
