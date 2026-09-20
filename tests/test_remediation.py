@@ -162,6 +162,59 @@ class TestRealLLMProvider:
             assert "trace" in result.text.lower() or "step" in result.text.lower()
 
 
+class TestEnrichedPromptConstruction:
+    def test_real_llm_formats_options_and_attempts(self, monkeypatch, store):
+        from remediation.provider import RealLLMExplanationProvider
+        from remediation.schema import ExplanationPayload
+
+        captured_messages = []
+
+        def mock_complete(*, settings, budget, messages, schema, step, **kwargs):
+            captured_messages.extend(messages)
+            return ExplanationPayload(
+                student_id="priya",
+                concept="call_stack",
+                style="analogy",
+                text="Trays analogy with 5 frames.",
+            )
+
+        import slice.llm
+        monkeypatch.setattr(slice.llm, "complete", mock_complete)
+
+        run_id = store.create_run("test")
+        s = _settings()
+        b = Budget(store, run_id, s)
+        provider = RealLLMExplanationProvider()
+
+        result = provider.explain(
+            student_id="priya",
+            concept="call_stack",
+            style="analogy",
+            wrong_answer="a",
+            correct_answer="b",
+            question_text="What is the maximum number of activation records for factorial(4)?",
+            budget=b,
+            settings=s,
+            options={"a": "4", "b": "5", "c": "3", "d": "1"},
+            attempt=2,
+            mastery_pct=25,
+            previous_styles=["trace"],
+            topic="CS310 — Recursion",
+        )
+
+        assert result.text == "Trays analogy with 5 frames."
+        assert len(captured_messages) == 2
+
+        user_msg = captured_messages[1]["content"]
+        assert "[A] 4  <-- [STUDENT'S WRONG CHOICE]" in user_msg
+        assert "[B] 5  <-- [CORRECT ANSWER]" in user_msg
+        assert "Remediation Attempt: 2 of 2" in user_msg
+        assert "Styles already tried that failed: Trace" in user_msg
+        assert "Student's Current Concept Mastery: 25%" in user_msg
+        assert "Call Stack" in user_msg
+        assert "Diagnostic Question:" in user_msg
+
+
 class TestQuestionBank:
     def test_eight_questions(self):
         assert len(QUIZ_QUESTIONS) == 8
