@@ -87,5 +87,5 @@ In V1, explanation prompts were static markdown files on disk (`remediation/prom
    - It wraps these into a rigorous system prompt with universal pedagogical rules (diagnosing specific error, word count under 180 words, non-condescending tone, conceptual clarity without spoiling retest).
 4. **Role of `remediation/prompts/`**:
    - The `.md` files in `remediation/prompts/` are preserved **strictly as a legacy fallback** for the base recursion module.
-   - **No developer or instructor ever needs to create, edit, or maintain `.md` prompt files when introducing new subjects.** Every domain (from Database Normalization to OS Paging to Physics) is completely self-contained in its JSON package.
+   - **No developer or instructor ever needs to create, edit, or maintain `.md` prompt files when introducing new subjects.** Every domain (from Database Normalization to OS Paging to Physics) is completely self-contained in its JSON package..
 
