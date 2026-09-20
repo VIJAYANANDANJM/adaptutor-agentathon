@@ -550,7 +550,7 @@ def _drive_session_loop(store: Store, run_id: str, student_id: str,
             latest_flag_seq = flag_history[-1].seq if flag_history else -1
             latest_gp_seq = gp_history[-1].seq if gp_history else -1
 
-            if latest_gp_seq > latest_flag_seq and gp_history:
+            if latest_gp_seq > latest_flag_seq and latest_gp_seq > latest_awaiting_seq and gp_history:
                 # ── Guided Practice Triggered (Retest Pool Exhausted) ──
                 gp_payload = gp_history[-1].payload
                 concept = gp_payload["concept"]
@@ -633,7 +633,7 @@ def _drive_session_loop(store: Store, run_id: str, student_id: str,
 
                 continue
 
-            elif latest_awaiting_seq > latest_flag_seq and awaiting_history:
+            elif latest_awaiting_seq > latest_flag_seq and latest_awaiting_seq > latest_gp_seq and awaiting_history:
                 # Need retest answer from student
                 sel = store.latest(run_id, "style_selection")
                 expl = store.latest(run_id, "explanation")

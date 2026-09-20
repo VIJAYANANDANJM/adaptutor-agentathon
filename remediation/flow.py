@@ -478,8 +478,9 @@ def _evaluate(ctx: Context, retest: dict, sel: dict) -> RunState:
     )
     ctx.append("retest_feedback", feedback.model_dump(), produced_by="system")
 
+    available_styles = mod.available_styles if (mod and mod.available_styles) else STYLES
     tried = styles_tried_for_concept(ctx.store, ctx.run_id, concept)
-    untried = [s for s in STYLES if s not in tried]
+    untried = [s for s in available_styles if s not in tried]
 
     # Check if retest question pool is exhausted
     attempted = get_attempted_question_texts(ctx.store, ctx.run_id, concept)
@@ -498,7 +499,7 @@ def _evaluate(ctx: Context, retest: dict, sel: dict) -> RunState:
         }, produced_by="system")
         return RunState.AWAITING_EXPERT
 
-    if untried and not exhausted:
+    if untried and not exhausted and not gp_done:
         # Backward loop: return to SELECT to try another style
         return RunState.GATING
 
