@@ -1,0 +1,218 @@
+{
+  "module_id": "iot_mqtt",
+  "title": "CS3999 \u2014 Iot- Mqtt",
+  "description": "MQTT students must have a great knowledge about this.",
+  "concepts": [
+    "iot_mqtt_fundamentals",
+    "iot_mqtt_core_rules",
+    "iot_mqtt_edge_cases",
+    "iot_mqtt_advanced_flow"
+  ],
+  "concept_names": {
+    "iot_mqtt_fundamentals": "Iot- Mqtt Fundamentals",
+    "iot_mqtt_core_rules": "Iot- Mqtt Core Rules",
+    "iot_mqtt_edge_cases": "Iot- Mqtt Edge Cases",
+    "iot_mqtt_advanced_flow": "Iot- Mqtt Advanced Application"
+  },
+  "available_styles": [
+    "worked_example",
+    "analogy"
+  ],
+  "default_style": "worked_example",
+  "style_descriptions": {
+    "worked_example": "Step-by-step problem walkthrough solving a concrete IoT- MQTT scenario.",
+    "analogy": "Intuitive real-world analogy relating IoT- MQTT to familiar everyday systems."
+  },
+  "quiz": [
+    {
+      "id": "Q1",
+      "concept": "iot_mqtt_fundamentals",
+      "text": "What is the defining characteristic of Iot- Mqtt Fundamentals?",
+      "options": {
+        "a": "A primary requirement of Iot- Mqtt Fundamentals",
+        "b": "An invalid anti-pattern in Iot- Mqtt Fundamentals",
+        "c": "An unrelated secondary factor",
+        "d": "None of the above"
+      },
+      "correct": "a"
+    },
+    {
+      "id": "Q2",
+      "concept": "iot_mqtt_fundamentals",
+      "text": "Which scenario demonstrates a violation of Iot- Mqtt Fundamentals?",
+      "options": {
+        "a": "Properly adhering to Iot- Mqtt Fundamentals",
+        "b": "Ignoring the constraints of Iot- Mqtt Fundamentals",
+        "c": "Default initialization",
+        "d": "Normal operation"
+      },
+      "correct": "b"
+    },
+    {
+      "id": "Q3",
+      "concept": "iot_mqtt_core_rules",
+      "text": "What is the defining characteristic of Iot- Mqtt Core Rules?",
+      "options": {
+        "a": "A primary requirement of Iot- Mqtt Core Rules",
+        "b": "An invalid anti-pattern in Iot- Mqtt Core Rules",
+        "c": "An unrelated secondary factor",
+        "d": "None of the above"
+      },
+      "correct": "a"
+    },
+    {
+      "id": "Q4",
+      "concept": "iot_mqtt_core_rules",
+      "text": "Which scenario demonstrates a violation of Iot- Mqtt Core Rules?",
+      "options": {
+        "a": "Properly adhering to Iot- Mqtt Core Rules",
+        "b": "Ignoring the constraints of Iot- Mqtt Core Rules",
+        "c": "Default initialization",
+        "d": "Normal operation"
+      },
+      "correct": "b"
+    },
+    {
+      "id": "Q5",
+      "concept": "iot_mqtt_edge_cases",
+      "text": "What is the defining characteristic of Iot- Mqtt Edge Cases?",
+      "options": {
+        "a": "A primary requirement of Iot- Mqtt Edge Cases",
+        "b": "An invalid anti-pattern in Iot- Mqtt Edge Cases",
+        "c": "An unrelated secondary factor",
+        "d": "None of the above"
+      },
+      "correct": "a"
+    },
+    {
+      "id": "Q6",
+      "concept": "iot_mqtt_edge_cases",
+      "text": "Which scenario demonstrates a violation of Iot- Mqtt Edge Cases?",
+      "options": {
+        "a": "Properly adhering to Iot- Mqtt Edge Cases",
+        "b": "Ignoring the constraints of Iot- Mqtt Edge Cases",
+        "c": "Default initialization",
+        "d": "Normal operation"
+      },
+      "correct": "b"
+    },
+    {
+      "id": "Q7",
+      "concept": "iot_mqtt_advanced_flow",
+      "text": "What is the defining characteristic of Iot- Mqtt Advanced Application?",
+      "options": {
+        "a": "A primary requirement of Iot- Mqtt Advanced Application",
+        "b": "An invalid anti-pattern in Iot- Mqtt Advanced Application",
+        "c": "An unrelated secondary factor",
+        "d": "None of the above"
+      },
+      "correct": "a"
+    },
+    {
+      "id": "Q8",
+      "concept": "iot_mqtt_advanced_flow",
+      "text": "Which scenario demonstrates a violation of Iot- Mqtt Advanced Application?",
+      "options": {
+        "a": "Properly adhering to Iot- Mqtt Advanced Application",
+        "b": "Ignoring the constraints of Iot- Mqtt Advanced Application",
+        "c": "Default initialization",
+        "d": "Normal operation"
+      },
+      "correct": "b"
+    }
+  ],
+  "retest_questions": {
+    "attempt_1": {
+      "iot_mqtt_fundamentals": {
+        "concept": "iot_mqtt_fundamentals",
+        "text": "Retest (Attempt 1): In Iot- Mqtt Fundamentals, what is the correct handling?",
+        "options": {
+          "a": "Incorrect approach",
+          "b": "Standard verified approach for Iot- Mqtt Fundamentals",
+          "c": "Deprecate the component",
+          "d": "Bypass validation"
+        },
+        "correct": "b"
+      },
+      "iot_mqtt_core_rules": {
+        "concept": "iot_mqtt_core_rules",
+        "text": "Retest (Attempt 1): In Iot- Mqtt Core Rules, what is the correct handling?",
+        "options": {
+          "a": "Incorrect approach",
+          "b": "Standard verified approach for Iot- Mqtt Core Rules",
+          "c": "Deprecate the component",
+          "d": "Bypass validation"
+        },
+        "correct": "b"
+      },
+      "iot_mqtt_edge_cases": {
+        "concept": "iot_mqtt_edge_cases",
+        "text": "Retest (Attempt 1): In Iot- Mqtt Edge Cases, what is the correct handling?",
+        "options": {
+          "a": "Incorrect approach",
+          "b": "Standard verified approach for Iot- Mqtt Edge Cases",
+          "c": "Deprecate the component",
+          "d": "Bypass validation"
+        },
+        "correct": "b"
+      },
+      "iot_mqtt_advanced_flow": {
+        "concept": "iot_mqtt_advanced_flow",
+        "text": "Retest (Attempt 1): In Iot- Mqtt Advanced Application, what is the correct handling?",
+        "options": {
+          "a": "Incorrect approach",
+          "b": "Standard verified approach for Iot- Mqtt Advanced Application",
+          "c": "Deprecate the component",
+          "d": "Bypass validation"
+        },
+        "correct": "b"
+      }
+    },
+    "attempt_2": {
+      "iot_mqtt_fundamentals": {
+        "concept": "iot_mqtt_fundamentals",
+        "text": "Retest (Attempt 2): How should an edge-case be resolved in Iot- Mqtt Fundamentals?",
+        "options": {
+          "a": "Throw an unhandled exception",
+          "b": "Apply canonical Iot- Mqtt Fundamentals remediation",
+          "c": "Ignore boundary condition",
+          "d": "Restart process"
+        },
+        "correct": "b"
+      },
+      "iot_mqtt_core_rules": {
+        "concept": "iot_mqtt_core_rules",
+        "text": "Retest (Attempt 2): How should an edge-case be resolved in Iot- Mqtt Core Rules?",
+        "options": {
+          "a": "Throw an unhandled exception",
+          "b": "Apply canonical Iot- Mqtt Core Rules remediation",
+          "c": "Ignore boundary condition",
+          "d": "Restart process"
+        },
+        "correct": "b"
+      },
+      "iot_mqtt_edge_cases": {
+        "concept": "iot_mqtt_edge_cases",
+        "text": "Retest (Attempt 2): How should an edge-case be resolved in Iot- Mqtt Edge Cases?",
+        "options": {
+          "a": "Throw an unhandled exception",
+          "b": "Apply canonical Iot- Mqtt Edge Cases remediation",
+          "c": "Ignore boundary condition",
+          "d": "Restart process"
+        },
+        "correct": "b"
+      },
+      "iot_mqtt_advanced_flow": {
+        "concept": "iot_mqtt_advanced_flow",
+        "text": "Retest (Attempt 2): How should an edge-case be resolved in Iot- Mqtt Advanced Application?",
+        "options": {
+          "a": "Throw an unhandled exception",
+          "b": "Apply canonical Iot- Mqtt Advanced Application remediation",
+          "c": "Ignore boundary condition",
+          "d": "Restart process"
+        },
+        "correct": "b"
+      }
+    }
+  }
+}
