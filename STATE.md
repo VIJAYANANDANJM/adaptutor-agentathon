@@ -43,7 +43,7 @@
   - Strict **1-retry bound per step** with targeted hints preventing infinite loops.
   - Completion card `✓ GUIDED PRACTICE COMPLETE` followed by an independent `Fresh Retest`.
   - State persistence and process crash resumption.
-  - *Evidence*: [`docs/evidence/stress-testing.md`](file:///c:/Users/vijay/OneDrive/Desktop/Agentathon-2026/adapt-tutor/docs/evidence/stress-testing.md) (Vikram Dharshan, Commit `4654f9d`).
+  - *Evidence*: [`docs/evidence/stress-test.md`](file:///c:/Users/vijay/OneDrive/Desktop/Agentathon-2026/adapt-tutor/docs/evidence/stress-test.md) (Vikram Dharshan, Commit `4654f9d`).
 - [x] **Persistent Learner Model (`remediation/learner.py`)**: EMA mastery calculation ($0.25$ gap init, $+0.45$ pass, $-0.15$ fail), classification (weak/strong), and style win-rate tracking.
 - [x] **Evidence-Based Style Selector (`remediation/selector.py`)**: Multi-armed bandit formula ($0.7 \times \text{StudentRate} + 0.3 \times \text{CohortRate}$).
 - [x] **Human-in-the-Loop Web Portal (`web/expert.py`)**: FastAPI interface at `http://127.0.0.1:8000` with pending escalations, student mastery roster (`/students`), and curriculum creator.

@@ -100,7 +100,7 @@ AdaptTutor adopts the **Agentic Slice architecture**:
 ---
 
 ### Decision 5: Retest Exhaustion → Guided Practice → Fresh Retest
-* **Empirical Trigger**: Adversarial Stress Testing with **Vikram Dharshan** ([`stress-testing.md`](file:///c:/Users/vijay/OneDrive/Desktop/Agentathon-2026/adapt-tutor/docs/evidence/stress-testing.md)).
+* **Empirical Trigger**: Adversarial Stress Testing with **Vikram Dharshan** ([`stress-test.md`](file:///c:/Users/vijay/OneDrive/Desktop/Agentathon-2026/adapt-tutor/docs/evidence/stress-test.md)).
 * **Problem**: Standard curriculum banks contain finite retest questions (typically 2–3 per concept). Under repeated failures, questions could repeat, loops could spin infinitely, or students were prematurely escalated without scaffolded practice.
 * **Design Decision**:
   - **Question Tracking**: Logs attempted question texts in SQLite; guarantees questions never repeat while unused questions exist.

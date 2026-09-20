@@ -96,7 +96,8 @@ adapt-tutor/
 │       ├── walkthrough-1.md        # Roopa Varshni (personalized explanations)
 │       ├── walkthrough-2.md        # Jeeva S (mistake-specific retest feedback)
 │       ├── walkthrough-3.md        # Sripramod Y (clear learning state & goals)
-│       ├── stress-testing.md       # Vikram Dharshan (pool exhaustion & guided practice)
+│       ├── stress-test.md          # Vikram Dharshan (pool exhaustion & guided practice)
+│       ├── design-rationale.md     # Architectural, pedagogical & math decisions
 │       └── DECLARATION.md          # Certification of user testing
 │
 ├── web/
@@ -212,6 +213,6 @@ All features in AdaptTutor were iteratively designed and validated through **rea
 - **Roopa Varshni** (*Walkthrough 1*): Personalized explanations, student mastery context, 3-part analogy scaffold ([`walkthrough-1.md`](file:///c:/Users/vijay/OneDrive/Desktop/Agentathon-2026/adapt-tutor/docs/evidence/walkthrough-1.md)).
 - **Jeeva S** (*Walkthrough 2*): Mistake-specific failed retest feedback and misconception diagnosis ([`walkthrough-2.md`](file:///c:/Users/vijay/OneDrive/Desktop/Agentathon-2026/adapt-tutor/docs/evidence/walkthrough-2.md)).
 - **Sripramod Y** (*Walkthrough 3*): Clear learning state and next goal presentation cards ([`walkthrough-3.md`](file:///c:/Users/vijay/OneDrive/Desktop/Agentathon-2026/adapt-tutor/docs/evidence/walkthrough-3.md)).
-- **Vikram Dharshan** (*Stress Testing*): Adverse boundary conditions, retest pool exhaustion, guided practice, and 1-retry bounded loops ([`stress-testing.md`](file:///c:/Users/vijay/OneDrive/Desktop/Agentathon-2026/adapt-tutor/docs/evidence/stress-testing.md)).
+- **Vikram Dharshan** (*Stress Testing*): Adverse boundary conditions, retest pool exhaustion, guided practice, and 1-retry bounded loops ([`stress-test.md`](file:///c:/Users/vijay/OneDrive/Desktop/Agentathon-2026/adapt-tutor/docs/evidence/stress-test.md)).
 
 See the formal declaration in [`docs/USER_TESTING_DECLARATION.md`](file:///c:/Users/vijay/OneDrive/Desktop/Agentathon-2026/adapt-tutor/docs/USER_TESTING_DECLARATION.md).

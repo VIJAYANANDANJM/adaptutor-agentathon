@@ -91,7 +91,7 @@ Across the development cycle, we moved from initial specifications to a fully de
 - **Commit**: `18cada7`.
 
 ### Phase 10: Retest Pool Exhaustion, Guided Practice & Fresh Retests
-- **Feedback Source**: Stress Testing with **Vikram Dharshan** ([`docs/evidence/stress-testing.md`](file:///c:/Users/vijay/OneDrive/Desktop/Agentathon-2026/adapt-tutor/docs/evidence/stress-testing.md)).
+- **Feedback Source**: Stress Testing with **Vikram Dharshan** ([`docs/evidence/stress-test.md`](file:///c:/Users/vijay/OneDrive/Desktop/Agentathon-2026/adapt-tutor/docs/evidence/stress-test.md)).
 - Created question tracking service (`remediation/practice.py`) to prevent repeating retests while unused questions exist.
 - When the curated retest pool is exhausted, the system transitions into **Guided Practice** (`⚠️ RETEST POOL EXHAUSTED`).
 - Delivers 2–4 concept-specific reasoning steps with a strict **1-retry bound per step** with targeted hints, preventing infinite loops.

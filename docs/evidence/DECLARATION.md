@@ -47,7 +47,7 @@ To evaluate AdaptTutor under authentic learning conditions, we instituted a mult
 | **1** | **Roopa Varshni** | Engineering Student, CEG | Walkthrough 1 | Personalized explanations, context enrichment, and analogy anchors | Google Form & Post-session Interview | [`55c4908`](file:///c:/Users/vijay/OneDrive/Desktop/Agentathon-2026/adapt-tutor) | [`walkthrough-1.md`](file:///c:/Users/vijay/OneDrive/Desktop/Agentathon-2026/adapt-tutor/docs/evidence/walkthrough-1.md) |
 | **2** | **Jeeva S** | Engineering Student, CEG | Walkthrough 2 | Retest failure feedback, misconception diagnosis, and why-wrong clarity | Google Form & Post-session Interview | [`6a9308c`](file:///c:/Users/vijay/OneDrive/Desktop/Agentathon-2026/adapt-tutor) | [`walkthrough-2.md`](file:///c:/Users/vijay/OneDrive/Desktop/Agentathon-2026/adapt-tutor/docs/evidence/walkthrough-2.md) |
 | **3** | **Sripramod Y** | Engineering Student, CEG | Walkthrough 3 | Learning state transparency, previous approach reflection, and immediate next goal | Google Form & Post-session Interview | [`18cada7`](file:///c:/Users/vijay/OneDrive/Desktop/Agentathon-2026/adapt-tutor) | [`walkthrough-3.md`](file:///c:/Users/vijay/OneDrive/Desktop/Agentathon-2026/adapt-tutor/docs/evidence/walkthrough-3.md) |
-| **4** | **Vikram Dharshan** | Peer Evaluator / QA Tester | Stress Testing | Adversarial inputs, repeated retest failures, pool exhaustion, and process crash recovery | Google Form & Adversarial Log Analysis | [`4654f9d`](file:///c:/Users/vijay/OneDrive/Desktop/Agentathon-2026/adapt-tutor) | [`stress-testing.md`](file:///c:/Users/vijay/OneDrive/Desktop/Agentathon-2026/adapt-tutor/docs/evidence/stress-testing.md) |
+| **4** | **Vikram Dharshan** | Peer Evaluator / QA Tester | Stress Testing | Adversarial inputs, repeated retest failures, pool exhaustion, and process crash recovery | Google Form & Adversarial Log Analysis | [`4654f9d`](file:///c:/Users/vijay/OneDrive/Desktop/Agentathon-2026/adapt-tutor) | [`stress-test.md`](file:///c:/Users/vijay/OneDrive/Desktop/Agentathon-2026/adapt-tutor/docs/evidence/stress-test.md) |
 
 ---
 
@@ -92,7 +92,7 @@ The following major features in the AdaptTutor codebase were directly conceived 
 ### 4. Retest Exhaustion, Guided Practice & Bounded Retries (Feedback from Vikram Dharshan)
 - **User Insight**: Under severe repeated failures, the finite retest question pool was exhausted, risking question repetition, infinite loops, or premature escalation.
 - **Implementation**: Engineered `remediation/practice.py` providing pool exhaustion detection (`⚠️ RETEST POOL EXHAUSTED`), 2–4 step interactive Guided Practice with a strict 1-retry limit per step, crash-resilient resumption, and unseen fresh independent retests.
-- **Commit**: `4654f9d` | **Evidence**: `docs/evidence/stress-testing.md`
+- **Commit**: `4654f9d` | **Evidence**: `docs/evidence/stress-test.md`
 
 ---
 
