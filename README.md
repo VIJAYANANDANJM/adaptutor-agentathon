@@ -47,18 +47,9 @@ python run.py replay <run_id>
 
 ## Environment Setup
 
-### Mock Mode (default — no API key needed)
-
-```bash
-export LLM_MODE=mock
-python -m pytest        # all tests pass, zero network calls
-```
-
-### Real Mode (requires OpenRouter API key)
-
 ```bash
 cp .env.example .env
-# Edit .env: set LLM_MODE=real and paste your OPENROUTER_API_KEY
+# Edit .env: set OPENROUTER_API_KEY
 python scripts/doctor.py    # verify connectivity
 python run.py session student_123
 ```
@@ -79,7 +70,7 @@ adapt-tutor/
 ├── remediation/        # Domain Layer (CS3301 Recursion)
 │   ├── schema.py       # Pydantic schemas for all records
 │   ├── questions.py    # Fixed 8-question quiz + retest bank
-│   ├── provider.py     # Mock & Real explanation providers
+│   ├── provider.py     # Real LLM explanation provider
 │   ├── flow.py         # State machine: QUIZ→DIAGNOSE→SELECT→EXPLAIN→RETEST→EVALUATE
 │   ├── stub.py         # Test persona data (Priya, Ravi, Karthik)
 │   └── prompts/        # Style-specific prompt templates
@@ -133,7 +124,7 @@ styles tried, and can submit a custom hint that resumes the student's session.
 ## Testing
 
 ```bash
-# All tests (runs in mock mode, zero network)
+# All tests
 python -m pytest
 
 # Specific test suites

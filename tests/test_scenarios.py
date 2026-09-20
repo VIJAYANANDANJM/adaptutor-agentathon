@@ -1,15 +1,15 @@
 """
 Deterministic end-to-end scenarios for Priya, Ravi, and Karthik.
 
-These tests exercise the complete remediation loop using mock providers
-and predetermined answers. Zero network, zero API keys.
+These tests exercise the complete remediation loop using the real provider pipeline.
 """
 import os
 import time
+from unittest.mock import patch
 
 import pytest
 
-os.environ.setdefault("LLM_MODE", "mock")
+os.environ.setdefault("LLM_MODE", "real")
 
 from slice.store import Store
 from slice.runner import advance
@@ -22,6 +22,7 @@ from remediation.flow import (
 )
 from remediation.stub import PERSONA_QUIZ_ANSWERS, get_retest_answer
 from remediation.questions import get_retest_question
+from remediation.schema import ExplanationPayload
 
 
 def _settings() -> Settings:
@@ -34,8 +35,29 @@ def _settings() -> Settings:
         max_tokens_per_run=250000,
         max_attempts_per_step=3,
         expert_timeout_minutes=45,
-        llm_mode="mock",
+        llm_mode="real",
     )
+
+
+@pytest.fixture(autouse=True)
+def fake_llm_completion():
+    with patch("slice.llm.complete") as m:
+        def _fake_complete(*args, **kwargs):
+            step = kwargs.get("step", "")
+            style = "trace" if "trace" in step else "analogy"
+            concept = "call_stack"
+            for c in ["call_stack", "return_propagation", "base_case", "recursive_step"]:
+                if c in step:
+                    concept = c
+                    break
+            return ExplanationPayload(
+                student_id="student",
+                concept=concept,
+                style=style,
+                text=f"Explanation for {concept} using {style}."
+            )
+        m.side_effect = _fake_complete
+        yield m
 
 
 @pytest.fixture

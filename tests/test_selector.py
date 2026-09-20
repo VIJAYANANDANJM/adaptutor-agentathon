@@ -8,7 +8,7 @@ fallback to cohort then default, and demo persona scenarios.
 import os
 import pytest
 
-os.environ.setdefault("LLM_MODE", "mock")
+os.environ.setdefault("LLM_MODE", "real")
 
 from slice.store import Store
 from remediation.selector import adaptive_select, STYLES, DEFAULT_STYLE

@@ -58,7 +58,7 @@ for pkg in ("httpx", "fastapi", "uvicorn"):
         ver = getattr(m, "__version__", getattr(m, "VERSION", "?"))
         line(OK, f"{pkg} {ver}")
     except ImportError:
-        line(WARN, f"{pkg} not installed (optional for mock mode)",
+        line(WARN, f"{pkg} not installed",
              f"Run: pip install {pkg}")
 
 # 4. .env file
@@ -68,10 +68,10 @@ if os.path.exists(env_path):
     from slice.config import load_env
     load_env(env_path)
 else:
-    line(WARN, ".env not found", "Not needed for LLM_MODE=mock. Copy .env.example for real mode.")
+    line(WARN, ".env not found", "Copy .env.example to .env and set your OPENROUTER_API_KEY.")
 
 # 5. LLM_MODE
-mode = os.environ.get("LLM_MODE", "mock").strip().lower()
+mode = os.environ.get("LLM_MODE", "real").strip().lower()
 line(OK, f"LLM_MODE={mode}")
 if mode == "real":
     key = os.environ.get("OPENROUTER_API_KEY", "").strip()
@@ -80,6 +80,8 @@ if mode == "real":
     else:
         line(BAD, "OPENROUTER_API_KEY is empty",
              "Required for LLM_MODE=real. Paste it in .env.")
+else:
+    line(BAD, f"Invalid LLM_MODE: {mode}", "Only LLM_MODE=real is supported.")
 
 # 6. SQLite
 try:

@@ -24,7 +24,7 @@ provided as the hackathon's foundation framework:
 
 Minor modifications made:
 - Added `all_versions_by_kind()` method to `store.py` for population-level queries
-- Added `llm_mode` field to `config.py` for mock/real provider switching
+- Added `llm_mode` field to `config.py` (configured for real provider)
 - Removed `retrieve.py` (vector/RAG not used in this domain)
 
 ### 2. Product Specification

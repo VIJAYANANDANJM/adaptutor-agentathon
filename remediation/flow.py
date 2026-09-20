@@ -219,9 +219,8 @@ def handle_explain(ctx: Context) -> RunState:
     else:
         question_text, wrong_answer, correct_answer = "", "", ""
 
-    provider = get_provider(ctx.settings.llm_mode)
-    if ctx.settings.llm_mode == "real":
-        print(f"\n[AI Tutor] Generating {style} explanation for {concept.replace('_', ' ').title()} (waiting for model response)...")
+    provider = get_provider()
+    print(f"\n[AI Tutor] Generating {style} explanation for {concept.replace('_', ' ').title()} (waiting for model response)...")
     explanation = provider.explain(
         student_id=student_id,
         concept=concept,

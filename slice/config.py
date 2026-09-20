@@ -31,7 +31,7 @@ class Settings:
     max_tokens_per_run: int      # the run-level fence
     max_attempts_per_step: int
     expert_timeout_minutes: int
-    llm_mode: str                # "mock" or "real"
+    llm_mode: str                # "real"
     langfuse_public: str = ""
     langfuse_secret: str = ""
     langfuse_host: str = ""
@@ -54,7 +54,7 @@ def settings(reload: bool = True) -> Settings:
         max_tokens_per_run    = int(g("SLICE_MAX_TOKENS_PER_RUN", "250000")),
         max_attempts_per_step = int(g("SLICE_MAX_ATTEMPTS_PER_STEP", "3")),
         expert_timeout_minutes= int(g("SLICE_EXPERT_TIMEOUT_MINUTES", "45")),
-        llm_mode              = g("LLM_MODE", "mock").strip().lower(),
+        llm_mode              = g("LLM_MODE", "real").strip().lower(),
         langfuse_public       = g("LANGFUSE_PUBLIC_KEY", "").strip(),
         langfuse_secret       = g("LANGFUSE_SECRET_KEY", "").strip(),
         langfuse_host         = g("LANGFUSE_HOST", "https://cloud.langfuse.com").strip(),

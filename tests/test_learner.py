@@ -8,7 +8,7 @@ and persistence across Store restarts.
 import os
 import pytest
 
-os.environ.setdefault("LLM_MODE", "mock")
+os.environ.setdefault("LLM_MODE", "real")
 
 from slice.store import Store
 from remediation.learner import (

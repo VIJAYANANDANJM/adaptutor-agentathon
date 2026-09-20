@@ -165,7 +165,7 @@ adapt-tutor/
 ├── remediation/
 │   ├── flow.py                     # Remediation state machine handlers
 │   ├── learner.py                  # LearnerModel class & mastery rules [NEW]
-│   ├── provider.py                 # Mock & Real LLM explanation providers
+│   ├── provider.py                 # Real LLM explanation provider
 │   ├── questions.py                # Curriculum loaders and validation
 │   ├── schema.py                   # Pydantic schemas
 │   ├── selector.py                 # Weighted adaptive style selector [NEW]
@@ -209,7 +209,7 @@ All 95 unit and integration tests pass:
 - **`tests/test_learner.py` (22 tests):** Quiz initialization, retest increment/decrement rules, instructor bonuses, caps/floors, concept classification, style win rates, and cross-restart persistence.
 - **`tests/test_selector.py` (14 tests):** Weighting formula ($0.7 / 0.3$), differential selection for identical gaps, Attempt 2 non-repetition, fallback hierarchy, demo persona selections, and reason string validation.
 - **`tests/test_store.py` (13 tests):** Append-only triggers, versioning, counters, question storage, and SQLite persistence.
-- **`tests/test_remediation.py` (15 tests):** Quiz scoring, question bank validity, mock providers.
+- **`tests/test_remediation.py` (15 tests):** Quiz scoring, question bank validity, real LLM providers.
 - **`tests/test_scenarios.py` (8 tests):** Priya, Ravi, and Karthik end-to-end user journeys, revision limits, and process interruption resilience.
 - **`tests/test_budget.py` (8 tests):** Token budgets, attempt fences, restart survival.
 - **`tests/test_callback.py` (7 tests):** Escalation suspension, instructor answering, timeouts, and sweeps.
