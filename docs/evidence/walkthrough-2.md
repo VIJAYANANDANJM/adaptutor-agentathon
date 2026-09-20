@@ -40,4 +40,15 @@ $$\text{Retest Failed} \longrightarrow \text{Targeted Mistake Diagnosis} \longri
 
 When a student now fails a retest, AdaptTutor explicitly identifies the misconception behind the chosen option (e.g., *"You selected [A] 'It is popped and replaced'. This assumes activation records return or clear immediately, but in recursion each function invocation maintains its own distinct frame..."*), provides a key takeaway to remember, and only then presents the adaptation card and alternative pedagogical style.
 
+### Implementation Commit & Files Changed
+
+* **Commit ID:** `6a9308c` — *feat: add mistake-specific feedback after failed retests based on walkthrough 2*
+* **Specific Files Changed:**
+  - [`remediation/schema.py`](file:///c:/Users/vijay/OneDrive/Desktop/Agentathon-2026/adapt-tutor/remediation/schema.py): Added `RetestFeedback` domain model storing `student_id`, `concept`, `attempt`, `selected_option`, `selected_text`, `correct_option`, `correct_text`, `why_wrong`, `what_to_remember`, and source.
+  - [`remediation/feedback.py`](file:///c:/Users/vijay/OneDrive/Desktop/Agentathon-2026/adapt-tutor/remediation/feedback.py): Created the diagnosis component generating targeted mistake feedback via OpenRouter LLM (`MistakeAnalysisSchema`) with concept-aware deterministic fallbacks.
+  - [`remediation/flow.py`](file:///c:/Users/vijay/OneDrive/Desktop/Agentathon-2026/adapt-tutor/remediation/flow.py): Hooked feedback generation into `_evaluate()` on failed retests and appended `retest_feedback` records to SQLite.
+  - [`run.py`](file:///c:/Users/vijay/OneDrive/Desktop/Agentathon-2026/adapt-tutor/run.py): Added `print_retest_feedback_card()` and updated `_drive_session_loop` to render the diagnosis card immediately following a failed retest.
+  - [`tests/test_feedback.py`](file:///c:/Users/vijay/OneDrive/Desktop/Agentathon-2026/adapt-tutor/tests/test_feedback.py): Added 6-test suite verifying feedback generation, option text accuracy, adaptation continuation, and fallback resilience.
+
 *Verified by:* 6 new unit & integration tests in `tests/test_feedback.py` (108/108 tests passing across the repository).
+
