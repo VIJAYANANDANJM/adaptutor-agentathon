@@ -6,8 +6,8 @@ Run this before anything else to verify your environment is ready.
 
 Checks:
   1. Python version >= 3.10
-  2. Required packages installed (pydantic, pytest)
-  3. .env exists (if using real LLM mode)
+  2. Required packages installed (pydantic, pytest, httpx)
+  3. .env exists and OPENROUTER_API_KEY is set
   4. LLM_MODE setting
   5. SQLite works
   6. Import smoke test for all modules
@@ -42,8 +42,8 @@ if v >= (3, 10):
 else:
     line(BAD, f"Python {v.major}.{v.minor}.{v.micro}", "Requires Python >= 3.10")
 
-# 2. Required packages
-for pkg in ("pydantic", "pytest"):
+# 2. Required packages (all must be present for the real LLM pipeline to work)
+for pkg in ("pydantic", "pytest", "httpx"):
     try:
         m = importlib.import_module(pkg)
         ver = getattr(m, "__version__", getattr(m, "VERSION", "?"))
@@ -51,8 +51,8 @@ for pkg in ("pydantic", "pytest"):
     except ImportError:
         line(BAD, f"{pkg} not installed", f"Run: pip install {pkg}")
 
-# 3. Optional packages
-for pkg in ("httpx", "fastapi", "uvicorn"):
+# 3. Optional packages (only needed for the web dashboard / server)
+for pkg in ("fastapi", "uvicorn"):
     try:
         m = importlib.import_module(pkg)
         ver = getattr(m, "__version__", getattr(m, "VERSION", "?"))

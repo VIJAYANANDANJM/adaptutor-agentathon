@@ -311,7 +311,12 @@ def _drive_session_loop(store: Store, run_id: str, student_id: str,
 # ── Demo Runner ────────────────────────────────────────────────────────────
 
 def run_demo() -> None:
-    """Run deterministic demo with 3 personas showing adaptive behavior."""
+    """Run a live-provider demo with 3 personas showing adaptive behavior.
+
+    Explanation text comes from the real LLM via OpenRouter, so output varies
+    with network conditions, model availability, and API credentials.
+    Requires OPENROUTER_API_KEY to be set in .env.
+    """
     from remediation.stub import get_quiz_answers, get_retest_answer
 
     os.environ["LLM_MODE"] = "real"

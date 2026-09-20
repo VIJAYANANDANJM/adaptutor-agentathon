@@ -145,5 +145,17 @@ class RealLLMExplanationProvider(ExplanationProvider):
 
 
 def get_provider(mode: str = "real") -> ExplanationProvider:
-    """Factory: returns RealLLMExplanationProvider."""
+    """Factory: always returns RealLLMExplanationProvider.
+
+    Raises:
+        ValueError: if *mode* is anything other than "real", so that an
+            invalid environment configuration (e.g. LLM_MODE=mock left over
+            from an old .env) is caught early rather than silently proceeding.
+    """
+    if mode != "real":
+        raise ValueError(
+            f"Invalid provider mode {mode!r}. "
+            "Only LLM_MODE=real is supported. "
+            "Check your .env or environment variables."
+        )
     return RealLLMExplanationProvider()
