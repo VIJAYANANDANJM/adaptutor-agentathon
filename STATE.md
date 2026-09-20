@@ -63,7 +63,7 @@
 ### Test Suite Breakdown:
 1. `tests/test_budget.py` (8 tests): Token usage, budget fences, restart survival.
 2. `tests/test_callback.py` (7 tests): Suspension, resume, write-once, timeout.
-3. `tests/test_curriculum.py` (6 tests): Module listing, dynamic loading, multi-module scoring, AI mock generator.
+3. `tests/test_curriculum.py` (6 tests): Module listing, dynamic loading, multi-module scoring, AI curriculum generator.
 4. `tests/test_feedback.py` (6 tests): Mistake diagnosis generation, option text extraction, deterministic fallback.
 5. `tests/test_goals.py` (8 tests): Pedagogical goal retrieval, state card formatting, retry context, session loop.
 6. `tests/test_learner.py` (22 tests): Mastery init, retest updates, instructor override, classification, style win-rate.

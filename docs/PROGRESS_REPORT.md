@@ -46,7 +46,7 @@ Across the development cycle, we moved from initial specifications to a fully de
   - 3-stage exponential backoff retry loop (2s, 4s, 6s) targeting HTTP 429 rate limits and 502/503 gateway timeouts.
   - Automatic markdown code-fence stripping (`_strip_fence()`).
   - Automated single-pass self-repair (`_repair()`): Injects validation errors and JSON schema back to the model if formatting fails.
-  - Zero-crash fallback to deterministic mock logic in case of complete external network failure.
+  - Zero-crash fallback with deterministic error capture in case of complete external network failure.
 
 ### Phase 4: V2 Persistent Learner Model & Evidence-Based Selector
 - **SQLite Persistence (`slice/store.py` & `remediation/learner.py`)**: Created dedicated tables (`learner_profiles` and `intervention_history`) to track student-specific and cohort-wide performance across sessions.
@@ -205,9 +205,7 @@ The system includes pre-seeded demonstration personas runnable live via `python 
 
 - **Active Branch**: `main` (feature branch `feat/topic-agnostic-curriculum` fully merged)
 - **Default Database**: `run.db` (SQLite, append-only records)
-- **Supported LLM Modes**:
-  - `LLM_MODE=mock`: Deterministic zero-network mode for tests.
-  - `LLM_MODE=real`: OpenRouter live generation (`openrouter/free` or specified model in `.env`).
+- **Supported LLM Mode**: `LLM_MODE=real` exclusively across all sessions, demos, and curriculum generators (OpenRouter live generation via `openrouter/free` or specified model in `.env`).
 - **Instructor Panel**: `python -m uvicorn web.expert:app --host 127.0.0.1 --port 8000`
 - **Judge Execution Entrypoint**: [`RUN.md`](file:///c:/Users/vijay/OneDrive/Desktop/Agentathon-2026/adapt-tutor/RUN.md)
 
