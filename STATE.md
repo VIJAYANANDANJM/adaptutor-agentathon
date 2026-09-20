@@ -10,13 +10,12 @@
 
 - [x] Spine files from agentic-slice-kit (records, store, runner, llm, budget, callback, config)
 - [x] Store extended with `all_versions_by_kind()` for population-level queries
-- [x] Config extended with `llm_mode` for mock/real provider switching
+- [x] Config configured with `LLM_MODE=real`
 - [x] Fixed 8-question quiz schema and data in `data/quiz.json` (2 per concept, 4 concepts)
 - [x] Fixed retest question bank with variant questions in `data/retest_questions.json`
 - [x] `remediation/questions.py` refactored to dynamically load and validate curriculum JSON files
 - [x] Pydantic schemas for all domain records (`remediation/schema.py`)
-- [x] MockExplanationProvider with canned style-specific responses
-- [x] RealLLMExplanationProvider calling `slice.llm.complete()` with OpenRouter (`openrouter/free`)
+- [x] RealLLMExplanationProvider calling `slice.llm.complete()` with OpenRouter
 - [x] Exponential backoff retry and 120s timeout on OpenRouter completion
 - [x] Remediation state machine (QUIZ→DIAGNOSE→SELECT→EXPLAIN→RETEST→EVALUATE)
 - [x] Backward loop (failed retest → SELECT with alternate style)
@@ -54,7 +53,7 @@
   - `test_runner.py` (4 tests): State machine, max steps, suspension
   - `test_budget.py` (8 tests): Token fences, attempts, restart survival
   - `test_callback.py` (7 tests): Suspension, resume, write-once, timeout
-  - `test_remediation.py` (15 tests): Quiz scoring, style selection, mock provider, question bank
+  - `test_remediation.py` (15 tests): Quiz scoring, style selection, real LLM provider, question bank
   - `test_scenarios.py` (8 tests): Priya, Ravi, Karthik E2E + revision limits + process interruption
   - `test_learner.py` (22 tests): Mastery init, retest updates, instructor updates, classification, style win-rate, persistence
   - `test_selector.py` (14 tests): Formula verification, different histories -> different selections, attempt 2 never repeats, fallback behavior, demo personas, reasons

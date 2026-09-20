@@ -4,14 +4,15 @@ Tests for remediation/ — Quiz scoring, deterministic diagnosis, and style sele
 import os
 import pytest
 
-os.environ.setdefault("LLM_MODE", "mock")
+os.environ.setdefault("LLM_MODE", "real")
 
+from unittest.mock import patch
 from slice.store import Store
 from slice.config import Settings
 from remediation.flow import score_quiz, select_style, count_revisions, styles_tried_for_concept
 from remediation.questions import ANSWER_KEY, QUIZ_QUESTIONS, ALL_CONCEPTS, get_retest_question
-from remediation.provider import MockExplanationProvider
-from remediation.schema import QuizSubmission, Diagnosis, Outcome
+from remediation.provider import RealLLMExplanationProvider, get_provider
+from remediation.schema import QuizSubmission, Diagnosis, Outcome, ExplanationPayload
 from slice.budget import Budget
 
 
@@ -25,7 +26,7 @@ def _settings() -> Settings:
         max_tokens_per_run=250000,
         max_attempts_per_step=3,
         expert_timeout_minutes=45,
-        llm_mode="mock",
+        llm_mode="real",
     )
 
 
@@ -107,64 +108,58 @@ class TestStyleSelection:
         assert style == "analogy"
 
 
-class TestMockProvider:
-    def test_mock_returns_explanation(self, store):
+class TestRealLLMProvider:
+    def test_real_provider_calls_llm(self, store):
         run_id = store.create_run("test")
         s = _settings()
         b = Budget(store, run_id, s)
-        provider = MockExplanationProvider()
-        result = provider.explain(
-            student_id="test_student",
-            concept="call_stack",
-            style="analogy",
-            wrong_answer="a",
-            correct_answer="b",
-            question_text="How many frames?",
-            budget=b,
-            settings=s,
-        )
-        assert result.concept == "call_stack"
-        assert result.style == "analogy"
-        assert "cafeteria trays" in result.text
+        provider = get_provider()
+        with patch("slice.llm.complete") as patched_complete:
+            patched_complete.return_value = ExplanationPayload(
+                student_id="test_student",
+                concept="call_stack",
+                style="analogy",
+                text="Think of the call stack like cafeteria trays."
+            )
+            result = provider.explain(
+                student_id="test_student",
+                concept="call_stack",
+                style="analogy",
+                wrong_answer="a",
+                correct_answer="b",
+                question_text="How many frames?",
+                budget=b,
+                settings=s,
+            )
+            assert result.concept == "call_stack"
+            assert result.style == "analogy"
+            assert "cafeteria trays" in result.text
+            assert patched_complete.called
 
-    def test_mock_trace_style(self, store):
+    def test_real_provider_trace_style(self, store):
         run_id = store.create_run("test")
         s = _settings()
         b = Budget(store, run_id, s)
-        provider = MockExplanationProvider()
-        result = provider.explain(
-            student_id="test_student",
-            concept="call_stack",
-            style="trace",
-            wrong_answer="a",
-            correct_answer="b",
-            question_text="How many frames?",
-            budget=b,
-            settings=s,
-        )
-    def test_mock_with_enriched_context(self, store):
-        run_id = store.create_run("test")
-        s = _settings()
-        b = Budget(store, run_id, s)
-        provider = MockExplanationProvider()
-        result = provider.explain(
-            student_id="test_student",
-            concept="call_stack",
-            style="analogy",
-            wrong_answer="a",
-            correct_answer="b",
-            question_text="How many frames for factorial(4)?",
-            budget=b,
-            settings=s,
-            options={"a": "4 frames", "b": "5 frames", "c": "3 frames", "d": "1 frame"},
-            attempt=2,
-            mastery_pct=35,
-            previous_styles=["trace"],
-            topic="CS310 — Recursion",
-        )
-        assert result.concept == "call_stack"
-        assert result.style == "analogy"
-        assert len(result.text) > 0
+        provider = get_provider()
+        with patch("slice.llm.complete") as patched_complete:
+            patched_complete.return_value = ExplanationPayload(
+                student_id="test_student",
+                concept="call_stack",
+                style="trace",
+                text="Let's trace step by step."
+            )
+            result = provider.explain(
+                student_id="test_student",
+                concept="call_stack",
+                style="trace",
+                wrong_answer="a",
+                correct_answer="b",
+                question_text="How many frames?",
+                budget=b,
+                settings=s,
+            )
+            assert result.style == "trace"
+            assert "trace" in result.text.lower() or "step" in result.text.lower()
 
 
 class TestEnrichedPromptConstruction:

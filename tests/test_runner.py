@@ -4,7 +4,7 @@ Tests for slice/runner.py — State machine execution and backward-loop tests.
 import os
 import pytest
 
-os.environ.setdefault("LLM_MODE", "mock")
+os.environ.setdefault("LLM_MODE", "real")
 
 from slice.store import Store
 from slice.runner import advance, Context
@@ -23,7 +23,7 @@ def _settings() -> Settings:
         max_tokens_per_run=250000,
         max_attempts_per_step=3,
         expert_timeout_minutes=45,
-        llm_mode="mock",
+        llm_mode="real",
     )
 
 

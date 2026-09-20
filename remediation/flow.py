@@ -25,8 +25,9 @@ from typing import Any, Callable
 from slice import callback
 from slice.budget import Budget
 from slice.config import Settings
+from slice.llm import ModelError
 from slice.records import RunState
-from slice.runner import Context, Handler
+from slice.runner import Context, Handler, _fail
 from slice.store import Store
 
 from remediation.learner import LearnerModel
@@ -230,23 +231,27 @@ def handle_explain(ctx: Context) -> RunState:
     tried = styles_tried_for_concept(ctx.store, ctx.run_id, concept)
     prev_styles = [s for s in tried if s != style]
 
-    provider = get_provider(ctx.settings.llm_mode)
-    if ctx.settings.llm_mode == "real":
-        print(f"\n[AI Tutor] Generating {style} explanation for {concept.replace('_', ' ').title()} (waiting for model response)...")
-    explanation = provider.explain(
-        student_id=student_id,
-        concept=concept,
-        style=style,
-        wrong_answer=wrong_answer,
-        correct_answer=correct_answer,
-        question_text=question_text,
-        budget=ctx.budget,
-        settings=ctx.settings,
-        options=options,
-        attempt=attempt,
-        mastery_pct=mastery_pct,
-        previous_styles=prev_styles,
-    )
+    provider = get_provider()
+    print(f"\n[AI Tutor] Generating {style} explanation for {concept.replace('_', ' ').title()} (waiting for model response)...")
+    try:
+        explanation = provider.explain(
+            student_id=student_id,
+            concept=concept,
+            style=style,
+            wrong_answer=wrong_answer,
+            correct_answer=correct_answer,
+            question_text=question_text,
+            budget=ctx.budget,
+            settings=ctx.settings,
+            options=options,
+            attempt=attempt,
+            mastery_pct=mastery_pct,
+            previous_styles=prev_styles,
+        )
+    except ModelError as exc:
+        # Model boundary failure (auth, network, schema, cap) — persist FAILED
+        # so the session loop never leaves the run in an ambiguous state.
+        return _fail(ctx, "model_error", str(exc))
 
     ctx.append("explanation", explanation.model_dump(), produced_by="llm")
 

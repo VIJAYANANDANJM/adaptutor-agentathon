@@ -4,7 +4,7 @@ Tests for slice/budget.py — Budget fence and revision limit tests.
 import os
 import pytest
 
-os.environ.setdefault("LLM_MODE", "mock")
+os.environ.setdefault("LLM_MODE", "real")
 
 from slice.store import Store
 from slice.budget import Budget, BudgetExceeded
@@ -21,7 +21,7 @@ def _settings(**overrides) -> Settings:
         max_tokens_per_run=1000,
         max_attempts_per_step=3,
         expert_timeout_minutes=45,
-        llm_mode="mock",
+        llm_mode="real",
     )
     defaults.update(overrides)
     return Settings(**defaults)

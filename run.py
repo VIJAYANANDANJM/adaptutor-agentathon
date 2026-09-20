@@ -10,7 +10,6 @@ Usage:
     python run.py doctor                    Run environment diagnostics
 
 Environment:
-    LLM_MODE=mock      Use deterministic canned responses (default, no API key needed)
     LLM_MODE=real      Use OpenRouter LLM (requires OPENROUTER_API_KEY in .env)
 """
 from __future__ import annotations
@@ -312,17 +311,18 @@ def _drive_session_loop(store: Store, run_id: str, student_id: str,
 # ── Demo Runner ────────────────────────────────────────────────────────────
 
 def run_demo() -> None:
-    """Run deterministic demo with 3 personas showing adaptive behavior."""
+    """Run a live-provider demo with 3 personas showing adaptive behavior.
+
+    Explanation text comes from the real LLM via OpenRouter, so output varies
+    with network conditions, model availability, and API credentials.
+    Requires OPENROUTER_API_KEY to be set in .env.
+    """
     from remediation.stub import get_quiz_answers, get_retest_answer
 
-    os.environ["LLM_MODE"] = "mock"
+    os.environ["LLM_MODE"] = "real"
 
     # Import seed_demo to set up persona histories
-    try:
-        import scripts.seed_demo as seeder
-    except ImportError:
-        sys.path.insert(0, os.path.join(os.path.dirname(__file__), "scripts"))
-        import seed_demo as seeder
+    from scripts import seed_demo as seeder
 
     store = Store(DB_PATH)
     s = get_settings()
