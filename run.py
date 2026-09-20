@@ -3,11 +3,13 @@
 AdaptTutor CLI entrypoint.
 
 Usage:
-    python run.py session <student_id>      Start or resume a remediation session
-    python run.py demo                      Run deterministic demo with 3 personas
-    python run.py replay <run_id>           Replay a past run's history
-    python run.py list                      List recent runs
-    python run.py doctor                    Run environment diagnostics
+    python run.py session <student_id> [--module <id>]   Start or resume a remediation session
+    python run.py modules                                 List all available course modules
+    python run.py generate-curriculum "<topic>"           Generate a new curriculum with AI
+    python run.py demo                                   Run deterministic demo with 3 personas
+    python run.py replay <run_id>                        Replay a past run's history
+    python run.py list                                   List recent runs
+    python run.py doctor                                 Run environment diagnostics
 
 Environment:
     LLM_MODE=real      Use OpenRouter LLM (requires OPENROUTER_API_KEY in .env)
@@ -37,6 +39,7 @@ from remediation.flow import (
     RemediationFlow, start_session, submit_retest,
     score_quiz, get_retest_question, styles_tried_for_concept,
 )
+from remediation.curriculum import list_modules, get_module, CurriculumModule
 from remediation.questions import QUIZ_QUESTIONS, ANSWER_KEY, QUESTION_CONCEPT
 from remediation.learner import LearnerModel
 
@@ -133,7 +136,58 @@ def print_escalation_card(student_id: str, concept: str,
 
 # ── Session Runner ─────────────────────────────────────────────────────────
 
-def run_session(student_id: str) -> None:
+def select_topic_menu(student_id: str, store: Store) -> str:
+    """Present an interactive course selection menu with learner model mastery."""
+    modules = list_modules()
+    if not modules:
+        return "python_recursion"
+    if len(modules) == 1:
+        return modules[0]["module_id"]
+
+    learner = LearnerModel(store, student_id)
+    profile = learner.profile
+    mastery = profile.get("mastery", {})
+
+    print(f"\n{'='*60}")
+    print(f"  🎓 AdaptTutor — Course Module Catalog")
+    print(f"  Student: {student_id}")
+    print(f"{'='*60}\n")
+    print("Available Learning Modules:\n")
+
+    recommended_idx = 1
+    lowest_mastery = 2.0
+
+    for i, m in enumerate(modules, 1):
+        mid = m["module_id"]
+        c_list = m.get("concepts", [])
+        known = [mastery[c] for c in c_list if c in mastery]
+        if known:
+            avg_m = sum(known) / len(known)
+            avg_pct = int(avg_m * 100)
+            status = f"{avg_pct}% {mastery_bar(avg_pct)} " + ("✅ Mastered" if avg_m >= 0.75 else "⚠️ Needs Review")
+            if avg_m < lowest_mastery:
+                lowest_mastery = avg_m
+                recommended_idx = i
+        else:
+            status = "0% [░░░░░░░░░░] ⏳ Not Started"
+            if lowest_mastery == 2.0:
+                recommended_idx = i
+
+        print(f"  [{i}] {m['title']}")
+        print(f"      Concepts ({m['concept_count']}): {', '.join(c_list[:3])}{'...' if len(c_list) > 3 else ''}")
+        print(f"      Your Status: {status}\n")
+
+    print(f"💡 Recommended next module: [{recommended_idx}] {modules[recommended_idx-1]['title']}")
+    while True:
+        choice = input(f"\nSelect a module [1-{len(modules)}] (default: {recommended_idx}): ").strip()
+        if not choice:
+            return modules[recommended_idx - 1]["module_id"]
+        if choice.isdigit() and 1 <= int(choice) <= len(modules):
+            return modules[int(choice) - 1]["module_id"]
+        print(f"  Please enter a number between 1 and {len(modules)}.")
+
+
+def run_session(student_id: str, module_id: str | None = None) -> None:
     """Interactive CLI session for a student."""
     store = Store(DB_PATH)
     s = get_settings()
@@ -141,35 +195,46 @@ def run_session(student_id: str) -> None:
 
     # Check for existing in-progress runs for this student
     existing = None
+    existing_mod_id = None
     for run in store.list_runs():
         if run["state"] in (RunState.COMPLETE.value, RunState.FAILED.value):
             continue
         meta = store.meta(run["id"])
         if meta.get("student_id") == student_id:
             existing = run["id"]
+            existing_mod_id = meta.get("module_id", "python_recursion")
             break
 
     if existing:
-        print(f"Resuming session {existing} for {student_id}...")
-        run_id = existing
-        past_experts = store.history(run_id, "expert_answer")
-        if past_experts:
-            latest_exp = past_experts[-1].payload
-            ans = latest_exp.get("answer")
-            who = (latest_exp.get("who") or "Instructor").capitalize()
-            print(f"\n{'='*60}")
-            print(f"📬 LATEST {who.upper()} GUIDANCE")
-            print(f"{'='*60}")
-            print(f"\"{ans}\"")
-            print(f"{'='*60}\n")
-    else:
+        ex_mod = get_module(existing_mod_id)
+        print(f"\n⚠️ Active in-progress session found: {existing} for '{ex_mod.title}'")
+        res = input("Resume this active session? [Y/n]: ").strip().lower()
+        if res not in ("n", "no"):
+            run_id = existing
+            past_experts = store.history(run_id, "expert_answer")
+            if past_experts:
+                latest_exp = past_experts[-1].payload
+                ans = latest_exp.get("answer")
+                who = (latest_exp.get("who") or "Instructor").capitalize()
+                print(f"\n{'='*60}")
+                print(f"📬 LATEST {who.upper()} GUIDANCE")
+                print(f"{'='*60}")
+                print(f"\"{ans}\"")
+                print(f"{'='*60}\n")
+        else:
+            existing = None
+
+    if not existing:
+        chosen_module_id = module_id or select_topic_menu(student_id, store)
+        mod = get_module(chosen_module_id)
+
         print(f"\n{'='*60}")
-        print(f"  CS3301 Data Structures — Week 6 Recursion Quiz")
+        print(f"  {mod.title}")
         print(f"  Student: {student_id}")
         print(f"{'='*60}\n")
 
         answers = {}
-        for q in QUIZ_QUESTIONS:
+        for q in mod.quiz:
             print(f"\n{q.id}. {q.text}")
             for opt, text in q.options.items():
                 print(f"  ({opt}) {text}")
@@ -180,7 +245,7 @@ def run_session(student_id: str) -> None:
                     break
                 print("  Please enter a valid option.")
 
-        run_id = start_session(store, student_id, answers, s)
+        run_id = start_session(store, student_id, answers, s, module_id=mod.module_id)
         print(f"\nSession started: {run_id}")
 
     # Run the state machine
@@ -251,14 +316,18 @@ def _drive_session_loop(store: Store, run_id: str, student_id: str,
                         prev_style = prev_sel.get("selected_style", "")
                         print_adaptation_card(attempt - 1, prev_style, style, reason)
 
+                    run_meta = store.meta(run_id)
+                    mod = get_module(run_meta.get("module_id", "python_recursion"))
+                    concept_name = mod.concept_display_name(concept)
+
                     print(f"\n{'─'*50}")
-                    print(f"Explanation for: {concept.replace('_', ' ').title()}")
+                    print(f"Explanation for: {concept_name}")
                     print(f"Style: {style.title()} (Attempt {attempt})")
                     print(f"{'─'*50}")
                     print(expl["text"])
                     print(f"{'─'*50}\n")
 
-                    retest_q = get_retest_question(concept, attempt)
+                    retest_q = mod.get_retest_question(concept, attempt)
                     print(f"Retest: {retest_q.text}")
                     for opt, text in retest_q.options.items():
                         print(f"  ({opt}) {text}")
@@ -408,7 +477,38 @@ def main():
     cmd = sys.argv[1]
 
     if cmd == "session" and len(sys.argv) >= 3:
-        run_session(sys.argv[2])
+        student_id = sys.argv[2]
+        module_id = None
+        if "--module" in sys.argv:
+            idx = sys.argv.index("--module")
+            if idx + 1 < len(sys.argv):
+                module_id = sys.argv[idx + 1]
+        elif "-m" in sys.argv:
+            idx = sys.argv.index("-m")
+            if idx + 1 < len(sys.argv):
+                module_id = sys.argv[idx + 1]
+        run_session(student_id, module_id=module_id)
+    elif cmd == "modules":
+        mods = list_modules()
+        print(f"\n{'ID':<25} {'Concepts':<10} {'Title'}")
+        print("─" * 70)
+        for m in mods:
+            print(f"{m['module_id']:<25} {m['concept_count']:<10} {m['title']}")
+        print()
+    elif cmd == "generate-curriculum" and len(sys.argv) >= 3:
+        topic = sys.argv[2]
+        desc = sys.argv[3] if len(sys.argv) >= 4 else ""
+        from remediation.curriculum_generator import generate_curriculum
+        print(f"\n[AdaptTutor] Generating curriculum for topic: '{topic}'...")
+        mod = generate_curriculum(topic, description=desc)
+        print(f"\n✅ Curriculum Module Created Successfully!")
+        print(f"  Module ID: {mod.module_id}")
+        print(f"  Title:     {mod.title}")
+        print(f"  Concepts:  {', '.join(mod.concepts)}")
+        print(f"  Styles:    {', '.join(mod.available_styles)}")
+        print(f"  Questions: {len(mod.quiz)} diagnostic questions + {len(mod.retest_attempt_1)} retests")
+        print(f"\nStudents can now take this module via:")
+        print(f"  python run.py session <student_id> --module {mod.module_id}\n")
     elif cmd == "demo":
         run_demo()
     elif cmd == "replay" and len(sys.argv) >= 3:
@@ -416,7 +516,8 @@ def main():
     elif cmd == "list":
         list_runs()
     elif cmd == "doctor":
-        os.execvp(sys.executable, [sys.executable, "scripts/doctor.py"])
+        import subprocess
+        subprocess.run([sys.executable, os.path.join(os.path.dirname(__file__), "scripts", "doctor.py")])
     else:
         print(__doc__)
         sys.exit(1)

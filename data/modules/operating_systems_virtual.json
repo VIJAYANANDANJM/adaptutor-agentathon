@@ -1,0 +1,218 @@
+{
+  "module_id": "operating_systems_virtual",
+  "title": "CS3999 \u2014 Operating Systems Virtual Memory",
+  "description": "Adaptive learning module for Operating Systems Virtual Memory.",
+  "concepts": [
+    "operating_systems_virtual_fundamentals",
+    "operating_systems_virtual_core_rules",
+    "operating_systems_virtual_edge_cases",
+    "operating_systems_virtual_advanced_flow"
+  ],
+  "concept_names": {
+    "operating_systems_virtual_fundamentals": "Operating Systems Virtual Memory Fundamentals",
+    "operating_systems_virtual_core_rules": "Operating Systems Virtual Memory Core Rules",
+    "operating_systems_virtual_edge_cases": "Operating Systems Virtual Memory Edge Cases",
+    "operating_systems_virtual_advanced_flow": "Operating Systems Virtual Memory Advanced Application"
+  },
+  "available_styles": [
+    "worked_example",
+    "analogy"
+  ],
+  "default_style": "worked_example",
+  "style_descriptions": {
+    "worked_example": "Step-by-step problem walkthrough solving a concrete Operating Systems Virtual Memory scenario.",
+    "analogy": "Intuitive real-world analogy relating Operating Systems Virtual Memory to familiar everyday systems."
+  },
+  "quiz": [
+    {
+      "id": "Q1",
+      "concept": "operating_systems_virtual_fundamentals",
+      "text": "What is the defining characteristic of Operating Systems Virtual Memory Fundamentals?",
+      "options": {
+        "a": "A primary requirement of Operating Systems Virtual Memory Fundamentals",
+        "b": "An invalid anti-pattern in Operating Systems Virtual Memory Fundamentals",
+        "c": "An unrelated secondary factor",
+        "d": "None of the above"
+      },
+      "correct": "a"
+    },
+    {
+      "id": "Q2",
+      "concept": "operating_systems_virtual_fundamentals",
+      "text": "Which scenario demonstrates a violation of Operating Systems Virtual Memory Fundamentals?",
+      "options": {
+        "a": "Properly adhering to Operating Systems Virtual Memory Fundamentals",
+        "b": "Ignoring the constraints of Operating Systems Virtual Memory Fundamentals",
+        "c": "Default initialization",
+        "d": "Normal operation"
+      },
+      "correct": "b"
+    },
+    {
+      "id": "Q3",
+      "concept": "operating_systems_virtual_core_rules",
+      "text": "What is the defining characteristic of Operating Systems Virtual Memory Core Rules?",
+      "options": {
+        "a": "A primary requirement of Operating Systems Virtual Memory Core Rules",
+        "b": "An invalid anti-pattern in Operating Systems Virtual Memory Core Rules",
+        "c": "An unrelated secondary factor",
+        "d": "None of the above"
+      },
+      "correct": "a"
+    },
+    {
+      "id": "Q4",
+      "concept": "operating_systems_virtual_core_rules",
+      "text": "Which scenario demonstrates a violation of Operating Systems Virtual Memory Core Rules?",
+      "options": {
+        "a": "Properly adhering to Operating Systems Virtual Memory Core Rules",
+        "b": "Ignoring the constraints of Operating Systems Virtual Memory Core Rules",
+        "c": "Default initialization",
+        "d": "Normal operation"
+      },
+      "correct": "b"
+    },
+    {
+      "id": "Q5",
+      "concept": "operating_systems_virtual_edge_cases",
+      "text": "What is the defining characteristic of Operating Systems Virtual Memory Edge Cases?",
+      "options": {
+        "a": "A primary requirement of Operating Systems Virtual Memory Edge Cases",
+        "b": "An invalid anti-pattern in Operating Systems Virtual Memory Edge Cases",
+        "c": "An unrelated secondary factor",
+        "d": "None of the above"
+      },
+      "correct": "a"
+    },
+    {
+      "id": "Q6",
+      "concept": "operating_systems_virtual_edge_cases",
+      "text": "Which scenario demonstrates a violation of Operating Systems Virtual Memory Edge Cases?",
+      "options": {
+        "a": "Properly adhering to Operating Systems Virtual Memory Edge Cases",
+        "b": "Ignoring the constraints of Operating Systems Virtual Memory Edge Cases",
+        "c": "Default initialization",
+        "d": "Normal operation"
+      },
+      "correct": "b"
+    },
+    {
+      "id": "Q7",
+      "concept": "operating_systems_virtual_advanced_flow",
+      "text": "What is the defining characteristic of Operating Systems Virtual Memory Advanced Application?",
+      "options": {
+        "a": "A primary requirement of Operating Systems Virtual Memory Advanced Application",
+        "b": "An invalid anti-pattern in Operating Systems Virtual Memory Advanced Application",
+        "c": "An unrelated secondary factor",
+        "d": "None of the above"
+      },
+      "correct": "a"
+    },
+    {
+      "id": "Q8",
+      "concept": "operating_systems_virtual_advanced_flow",
+      "text": "Which scenario demonstrates a violation of Operating Systems Virtual Memory Advanced Application?",
+      "options": {
+        "a": "Properly adhering to Operating Systems Virtual Memory Advanced Application",
+        "b": "Ignoring the constraints of Operating Systems Virtual Memory Advanced Application",
+        "c": "Default initialization",
+        "d": "Normal operation"
+      },
+      "correct": "b"
+    }
+  ],
+  "retest_questions": {
+    "attempt_1": {
+      "operating_systems_virtual_fundamentals": {
+        "concept": "operating_systems_virtual_fundamentals",
+        "text": "Retest (Attempt 1): In Operating Systems Virtual Memory Fundamentals, what is the correct handling?",
+        "options": {
+          "a": "Incorrect approach",
+          "b": "Standard verified approach for Operating Systems Virtual Memory Fundamentals",
+          "c": "Deprecate the component",
+          "d": "Bypass validation"
+        },
+        "correct": "b"
+      },
+      "operating_systems_virtual_core_rules": {
+        "concept": "operating_systems_virtual_core_rules",
+        "text": "Retest (Attempt 1): In Operating Systems Virtual Memory Core Rules, what is the correct handling?",
+        "options": {
+          "a": "Incorrect approach",
+          "b": "Standard verified approach for Operating Systems Virtual Memory Core Rules",
+          "c": "Deprecate the component",
+          "d": "Bypass validation"
+        },
+        "correct": "b"
+      },
+      "operating_systems_virtual_edge_cases": {
+        "concept": "operating_systems_virtual_edge_cases",
+        "text": "Retest (Attempt 1): In Operating Systems Virtual Memory Edge Cases, what is the correct handling?",
+        "options": {
+          "a": "Incorrect approach",
+          "b": "Standard verified approach for Operating Systems Virtual Memory Edge Cases",
+          "c": "Deprecate the component",
+          "d": "Bypass validation"
+        },
+        "correct": "b"
+      },
+      "operating_systems_virtual_advanced_flow": {
+        "concept": "operating_systems_virtual_advanced_flow",
+        "text": "Retest (Attempt 1): In Operating Systems Virtual Memory Advanced Application, what is the correct handling?",
+        "options": {
+          "a": "Incorrect approach",
+          "b": "Standard verified approach for Operating Systems Virtual Memory Advanced Application",
+          "c": "Deprecate the component",
+          "d": "Bypass validation"
+        },
+        "correct": "b"
+      }
+    },
+    "attempt_2": {
+      "operating_systems_virtual_fundamentals": {
+        "concept": "operating_systems_virtual_fundamentals",
+        "text": "Retest (Attempt 2): How should an edge-case be resolved in Operating Systems Virtual Memory Fundamentals?",
+        "options": {
+          "a": "Throw an unhandled exception",
+          "b": "Apply canonical Operating Systems Virtual Memory Fundamentals remediation",
+          "c": "Ignore boundary condition",
+          "d": "Restart process"
+        },
+        "correct": "b"
+      },
+      "operating_systems_virtual_core_rules": {
+        "concept": "operating_systems_virtual_core_rules",
+        "text": "Retest (Attempt 2): How should an edge-case be resolved in Operating Systems Virtual Memory Core Rules?",
+        "options": {
+          "a": "Throw an unhandled exception",
+          "b": "Apply canonical Operating Systems Virtual Memory Core Rules remediation",
+          "c": "Ignore boundary condition",
+          "d": "Restart process"
+        },
+        "correct": "b"
+      },
+      "operating_systems_virtual_edge_cases": {
+        "concept": "operating_systems_virtual_edge_cases",
+        "text": "Retest (Attempt 2): How should an edge-case be resolved in Operating Systems Virtual Memory Edge Cases?",
+        "options": {
+          "a": "Throw an unhandled exception",
+          "b": "Apply canonical Operating Systems Virtual Memory Edge Cases remediation",
+          "c": "Ignore boundary condition",
+          "d": "Restart process"
+        },
+        "correct": "b"
+      },
+      "operating_systems_virtual_advanced_flow": {
+        "concept": "operating_systems_virtual_advanced_flow",
+        "text": "Retest (Attempt 2): How should an edge-case be resolved in Operating Systems Virtual Memory Advanced Application?",
+        "options": {
+          "a": "Throw an unhandled exception",
+          "b": "Apply canonical Operating Systems Virtual Memory Advanced Application remediation",
+          "c": "Ignore boundary condition",
+          "d": "Restart process"
+        },
+        "correct": "b"
+      }
+    }
+  }
+}

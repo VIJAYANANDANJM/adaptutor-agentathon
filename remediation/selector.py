@@ -29,12 +29,16 @@ def adaptive_select(
     student_id: str,
     concept: str,
     styles_tried: list[str],
+    available_styles: list[str] | None = None,
+    default_style: str | None = None,
 ) -> tuple[str, str]:
     """Pick the best explanation style for a concept.
 
     Returns (selected_style, human_readable_reason).
     """
-    available = [s for s in STYLES if s not in styles_tried]
+    style_pool = available_styles if available_styles is not None else STYLES
+    def_style = default_style or (style_pool[0] if style_pool else DEFAULT_STYLE)
+    available = [s for s in style_pool if s not in styles_tried]
 
     # Edge cases
     if len(available) == 1:
@@ -44,7 +48,7 @@ def adaptive_select(
             f"Previous style ({failed}) failed; switching to {available[0]}.",
         )
     if not available:
-        return STYLES[0], "Both styles exhausted."
+        return def_style, "Both styles exhausted."
 
     # ── Compute scores ─────────────────────────────────────────────────
     scores: dict[str, float] = {}
@@ -67,8 +71,8 @@ def adaptive_select(
             f"{style.title()}: student={sr_str}, cohort={cr_str}, score={score:.2f}"
         )
 
-    # Select the highest scoring style, with tie-break toward first in STYLES order
-    best = max(available, key=lambda s: (scores[s], STYLES.index(s) == 0))
+    # Select the highest scoring style, with tie-break toward default style
+    best = max(available, key=lambda s: (scores[s], s == def_style))
 
     # Build reason string
     student_eff = store.get_style_efficacy(student_id)
@@ -105,7 +109,7 @@ def adaptive_select(
                 f"[{'; '.join(reasons_parts)}]"
             )
         else:
-            reason = f"no prior data for {concept}; defaulting to {DEFAULT_STYLE}."
-            best = DEFAULT_STYLE
+            reason = f"no prior data for {concept}; defaulting to {def_style}."
+            best = def_style
 
     return best, reason

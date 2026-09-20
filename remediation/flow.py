@@ -30,6 +30,7 @@ from slice.records import RunState
 from slice.runner import Context, Handler, _fail
 from slice.store import Store
 
+from remediation.curriculum import get_module
 from remediation.learner import LearnerModel
 from remediation.provider import ExplanationProvider, get_provider
 from remediation.questions import (
@@ -49,11 +50,19 @@ DEFAULT_STYLE = "analogy"
 
 # ── Deterministic: Score quiz answers ──────────────────────────────────────
 
-def score_quiz(answers: dict[str, str]) -> tuple[list[str], list[str], list[str]]:
-    """Score answers against the fixed key. Returns (wrong_questions, failed_concepts, passed_concepts)."""
-    wrong = [qid for qid, ans in answers.items() if ANSWER_KEY.get(qid) != ans.strip().lower()]
-    failed_concepts = list(dict.fromkeys(QUESTION_CONCEPT[q] for q in wrong))
-    all_tested = list(dict.fromkeys(QUESTION_CONCEPT[q] for q in answers))
+def score_quiz(answers: dict[str, str], module_id: str | None = None) -> tuple[list[str], list[str], list[str]]:
+    """Score answers against the key. Returns (wrong_questions, failed_concepts, passed_concepts)."""
+    if module_id:
+        mod = get_module(module_id)
+        key = mod.answer_key
+        concepts_map = mod.question_concept
+    else:
+        key = ANSWER_KEY
+        concepts_map = QUESTION_CONCEPT
+
+    wrong = [qid for qid, ans in answers.items() if key.get(qid) != ans.strip().lower()]
+    failed_concepts = list(dict.fromkeys(concepts_map[q] for q in wrong if q in concepts_map))
+    all_tested = list(dict.fromkeys(concepts_map[q] for q in answers if q in concepts_map))
     passed = [c for c in all_tested if c not in failed_concepts]
     return wrong, failed_concepts, passed
 
@@ -61,7 +70,9 @@ def score_quiz(answers: dict[str, str]) -> tuple[list[str], list[str], list[str]
 # ── Deterministic: Adaptive style selection ────────────────────────────────
 
 def select_style(store: Store, student_id: str, concept: str,
-                 styles_tried: list[str]) -> tuple[str, str]:
+                 styles_tried: list[str],
+                 available_styles: list[str] | None = None,
+                 default_style: str | None = None) -> tuple[str, str]:
     """Pick the best explanation style for a concept.
 
     Delegates to remediation.selector.adaptive_select which uses:
@@ -69,7 +80,9 @@ def select_style(store: Store, student_id: str, concept: str,
 
     Returns (selected_style, reason).
     """
-    return adaptive_select(store, student_id, concept, styles_tried)
+    return adaptive_select(store, student_id, concept, styles_tried,
+                           available_styles=available_styles,
+                           default_style=default_style)
 
 
 # ── Deterministic: Count revisions for a concept ──────────────────────────
@@ -99,7 +112,9 @@ def handle_quiz(ctx: Context) -> RunState:
     answers = sub["answers"]
     student_id = sub["student_id"]
 
-    wrong, failed, passed = score_quiz(answers)
+    meta = ctx.store.meta(ctx.run_id)
+    module_id = meta.get("module_id", "python_recursion")
+    wrong, failed, passed = score_quiz(answers, module_id=module_id)
 
     diag = Diagnosis(
         student_id=student_id,
@@ -179,7 +194,15 @@ def handle_select(ctx: Context) -> RunState:
         )
         return RunState.AWAITING_EXPERT
 
-    selected, reason = select_style(ctx.store, student_id, concept, tried)
+    meta = ctx.store.meta(ctx.run_id)
+    module_id = meta.get("module_id", "python_recursion")
+    mod = get_module(module_id)
+
+    selected, reason = select_style(
+        ctx.store, student_id, concept, tried,
+        available_styles=mod.available_styles,
+        default_style=mod.default_style,
+    )
     attempt = revisions + 1
 
     sel = StyleSelection(
@@ -205,19 +228,23 @@ def handle_explain(ctx: Context) -> RunState:
     style = sel_data["selected_style"]
     attempt = sel_data.get("attempt", 1)
 
+    meta = ctx.store.meta(ctx.run_id)
+    module_id = meta.get("module_id", "python_recursion")
+    mod = get_module(module_id)
+
     sub = ctx.latest("quiz_submission")
     q_answers = sub["answers"] if sub else {}
 
     wrong_questions = [qid for qid in q_answers
-                       if QUESTION_CONCEPT.get(qid) == concept
-                       and ANSWER_KEY.get(qid) != q_answers[qid].strip().lower()]
+                       if mod.question_concept.get(qid) == concept
+                       and mod.answer_key.get(qid) != q_answers[qid].strip().lower()]
 
     if wrong_questions:
         qid = wrong_questions[0]
-        q = QUESTION_BY_ID.get(qid)
+        q = mod.question_by_id.get(qid)
         question_text = q.text if q else ""
         wrong_answer = q_answers.get(qid, "")
-        correct_answer = ANSWER_KEY.get(qid, "")
+        correct_answer = mod.answer_key.get(qid, "")
         options = q.options if q else {}
     else:
         question_text, wrong_answer, correct_answer = "", "", ""
@@ -232,7 +259,7 @@ def handle_explain(ctx: Context) -> RunState:
     prev_styles = [s for s in tried if s != style]
 
     provider = get_provider()
-    print(f"\n[AI Tutor] Generating {style} explanation for {concept.replace('_', ' ').title()} (waiting for model response)...")
+    print(f"\n[AI Tutor] Generating {style} explanation for {mod.concept_display_name(concept)} (waiting for model response)...")
     try:
         explanation = provider.explain(
             student_id=student_id,
@@ -247,6 +274,8 @@ def handle_explain(ctx: Context) -> RunState:
             attempt=attempt,
             mastery_pct=mastery_pct,
             previous_styles=prev_styles,
+            topic=mod.title,
+            style_instruction=mod.style_descriptions.get(style, ""),
         )
     except ModelError as exc:
         # Model boundary failure (auth, network, schema, cap) — persist FAILED
@@ -557,9 +586,9 @@ class RemediationFlow:
 # ── High-level orchestration for programmatic use ──────────────────────────
 
 def start_session(store: Store, student_id: str, answers: dict[str, str],
-                  settings: Settings) -> str:
+                  settings: Settings, module_id: str = "python_recursion") -> str:
     """Start a new remediation session: create run, submit quiz, run through QUIZ."""
-    run_id = store.create_run("remediation", meta={"student_id": student_id})
+    run_id = store.create_run("remediation", meta={"student_id": student_id, "module_id": module_id})
 
     sub = QuizSubmission(student_id=student_id, answers=answers)
     store.append(run_id, "quiz_submission", sub.model_dump(), produced_by="student")
@@ -585,7 +614,10 @@ def submit_retest(store: Store, run_id: str, student_id: str, concept: str,
     style = latest_sel.payload["selected_style"]
     attempt = latest_sel.payload["attempt"]
 
-    retest_q = get_retest_question(concept, attempt)
+    meta = store.meta(run_id)
+    module_id = meta.get("module_id", "python_recursion")
+    mod = get_module(module_id)
+    retest_q = mod.get_retest_question(concept, attempt)
     passed = answer.strip().lower() == retest_q.correct.strip().lower()
 
     result = RetestResult(
