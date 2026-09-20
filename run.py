@@ -118,6 +118,32 @@ def print_adaptation_card(attempt: int, failed_style: str,
     print(f"└{'─' * w}┘")
 
 
+def print_retest_feedback_card(fb: dict) -> None:
+    """Print the mistake-specific retest diagnosis card."""
+    import textwrap
+    w = 60
+    opt = fb.get("selected_option", "").upper()
+    txt = fb.get("selected_text", "")
+    why = fb.get("why_wrong", "")
+    rem = fb.get("what_to_remember", "")
+
+    print(f"\n┌{'─' * w}┐")
+    print(f"│ {'🔍 RETEST FEEDBACK — MISTAKE DIAGNOSIS':<{w}} │")
+    print(f"│{' ' * w} │")
+    ans_line = f"Your answer: [{opt}] {txt}"
+    for line in textwrap.wrap(ans_line, width=w - 2):
+        print(f"│ {line:<{w - 2}} │")
+    print(f"│{' ' * w} │")
+    print(f"│ {'Why your answer was wrong:':<{w}} │")
+    for line in textwrap.wrap(why, width=w - 2):
+        print(f"│ {line:<{w - 2}} │")
+    print(f"│{' ' * w} │")
+    print(f"│ {'What to remember:':<{w}} │")
+    for line in textwrap.wrap(rem, width=w - 2):
+        print(f"│ {line:<{w - 2}} │")
+    print(f"└{'─' * w}┘")
+
+
 def print_escalation_card(student_id: str, concept: str,
                            styles_tried: list[str]) -> None:
     """Print the instructor escalation card."""
@@ -357,6 +383,15 @@ def _drive_session_loop(store: Store, run_id: str, student_id: str,
                     # Compute new mastery for the card
                     new_m = learner.concept_mastery(concept)
                     print_retest_result_card(concept, attempt, passed, old_m, new_m)
+
+                    if not passed:
+                        # Advance state machine so _evaluate executes and generates targeted feedback
+                        state = advance(store, run_id, flow, s)
+                        fb = store.latest(run_id, "retest_feedback")
+                        if fb:
+                            print_retest_feedback_card(fb)
+                        prev_sel = sel
+                        continue
 
                     prev_sel = sel
                     continue

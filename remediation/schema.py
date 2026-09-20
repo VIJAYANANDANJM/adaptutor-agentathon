@@ -76,3 +76,19 @@ class InstructorFlag(BaseModel):
     both_failed: bool
     state: str  # "waiting_instructor"
     message: str
+
+
+class RetestFeedback(BaseModel):
+    """Mistake-specific diagnosis and feedback after a failed retest."""
+    kind: str = "retest_feedback"
+    student_id: str
+    concept: str
+    attempt: int
+    selected_option: str
+    selected_text: str
+    correct_option: str
+    correct_text: str
+    why_wrong: str
+    what_to_remember: str
+    source: str = "llm"  # "llm" or "fallback"
+

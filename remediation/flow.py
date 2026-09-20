@@ -31,6 +31,7 @@ from slice.runner import Context, Handler, _fail
 from slice.store import Store
 
 from remediation.curriculum import get_module
+from remediation.feedback import generate_retest_feedback
 from remediation.learner import LearnerModel
 from remediation.provider import ExplanationProvider, get_provider
 from remediation.questions import (
@@ -448,6 +449,28 @@ def _evaluate(ctx: Context, retest: dict, sel: dict) -> RunState:
             "current_concept_index": next_idx,
         }, produced_by="system")
         return RunState.GATING  # back to SELECT for next concept
+
+    # ── Retest Failed: Generate targeted mistake feedback ──
+    meta = ctx.store.meta(ctx.run_id)
+    module_id = meta.get("module_id", "python_recursion")
+    mod = get_module(module_id)
+    retest_q = mod.get_retest_question(concept, attempt)
+    student_ans = retest.get("student_answer", "")
+
+    feedback = generate_retest_feedback(
+        student_id=student_id,
+        concept=concept,
+        attempt=attempt,
+        selected_option=student_ans,
+        correct_option=retest_q.correct,
+        question_text=retest_q.text,
+        options=retest_q.options,
+        previous_style=style,
+        settings=ctx.settings,
+        budget=ctx.budget,
+        topic=mod.title,
+    )
+    ctx.append("retest_feedback", feedback.model_dump(), produced_by="system")
 
     tried = styles_tried_for_concept(ctx.store, ctx.run_id, concept)
     untried = [s for s in STYLES if s not in tried]
