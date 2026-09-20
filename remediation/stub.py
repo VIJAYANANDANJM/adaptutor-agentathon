@@ -60,6 +60,7 @@ PERSONA_RETEST_ANSWERS: dict[str, dict[str, dict[str, str]]] = {
         "call_stack": {
             "analogy_1": "a",   # wrong on first attempt with analogy
             "trace_2": "a",     # wrong on second attempt with trace → instructor flag
+            "fresh_retest_3": "a", # wrong on fresh retest
         },
     },
     # ── Demo personas ──
@@ -81,6 +82,7 @@ PERSONA_RETEST_ANSWERS: dict[str, dict[str, dict[str, str]]] = {
             "analogy_1": "a",   # wrong on attempt 1 with analogy
             "analogy_2": "a",   # wrong on attempt 2 with analogy → escalates
             "trace_2": "a",     # wrong on attempt 2 with trace → escalates
+            "fresh_retest_3": "a", # wrong on fresh retest → escalates
         },
     },
 }
