@@ -79,14 +79,25 @@ def _run_remediation_loop(store, run_id, student_id, settings):
             return state
 
         if state == RunState.AWAITING_EXPERT:
-            # Determine if waiting for retest (student) or instructor
+            # Determine if waiting for retest (student), guided practice, or instructor
             awaiting_history = store.history(run_id, "awaiting_retest")
             flag_history = store.history(run_id, "instructor_flag")
+            gp_history = store.history(run_id, "awaiting_guided_practice")
 
             latest_awaiting_seq = awaiting_history[-1].seq if awaiting_history else -1
             latest_flag_seq = flag_history[-1].seq if flag_history else -1
+            latest_gp_seq = gp_history[-1].seq if gp_history else -1
 
-            if latest_awaiting_seq > latest_flag_seq and awaiting_history:
+            if latest_gp_seq > latest_flag_seq and gp_history and latest_gp_seq > latest_awaiting_seq:
+                from remediation.practice import record_guided_practice_event
+                gp_payload = gp_history[-1].payload
+                concept = gp_payload["concept"]
+                record_guided_practice_event(store, run_id, student_id, concept, completed=True, step_results=[])
+                # Fail fresh retest for test persona to verify escalation
+                submit_retest(store, run_id, student_id, concept, "wrong", settings)
+                store.set_state(run_id, RunState.PROBING)
+                continue
+            elif latest_awaiting_seq > latest_flag_seq and awaiting_history:
                 # Waiting for student retest
                 awaiting = awaiting_history[-1].payload
                 concept = awaiting["concept"]

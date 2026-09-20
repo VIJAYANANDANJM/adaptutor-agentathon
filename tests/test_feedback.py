@@ -270,7 +270,18 @@ def test_repeated_failure_produces_feedback_before_escalation(store):
     assert feedbacks[0].payload["attempt"] == 1
     assert feedbacks[1].payload["attempt"] == 2
 
-    # Escalation flag should be present
+    # Retest pool exhaustion triggers guided practice before final escalation
+    gp_flag = store.latest(run_id, "awaiting_guided_practice")
+    assert gp_flag is not None
+
+    # Complete guided practice and fail fresh retest to escalate to instructor
+    from remediation.practice import record_guided_practice_event
+    record_guided_practice_event(store, run_id, student_id, "call_stack", completed=True, step_results=[])
+    submit_retest(store, run_id, student_id, "call_stack", "wrong", s)
+    store.set_state(run_id, RunState.PROBING)
+    advance(store, run_id, flow, s)
+
+    # Escalation flag should now be present
     flag = store.latest(run_id, "instructor_flag")
     assert flag is not None
     assert flag["both_failed"] is True

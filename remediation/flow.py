@@ -34,6 +34,12 @@ from remediation.curriculum import get_module
 from remediation.feedback import generate_retest_feedback
 from remediation.learner import LearnerModel
 from remediation.provider import ExplanationProvider, get_provider
+from remediation.practice import (
+    get_attempted_question_texts,
+    is_retest_pool_exhausted,
+    has_completed_guided_practice,
+    get_next_unused_retest_question,
+)
 from remediation.questions import (
     ANSWER_KEY, ALL_CONCEPTS, QUESTION_BY_ID, QUESTION_CONCEPT,
     RETEST_QUESTIONS, get_retest_question,
@@ -475,11 +481,28 @@ def _evaluate(ctx: Context, retest: dict, sel: dict) -> RunState:
     tried = styles_tried_for_concept(ctx.store, ctx.run_id, concept)
     untried = [s for s in STYLES if s not in tried]
 
-    if untried:
+    # Check if retest question pool is exhausted
+    attempted = get_attempted_question_texts(ctx.store, ctx.run_id, concept)
+    exhausted = is_retest_pool_exhausted(mod, concept, attempted)
+    gp_done = has_completed_guided_practice(ctx.store, ctx.run_id, concept)
+
+    if (exhausted or not untried) and not gp_done:
+        # Retest pool exhausted: switch to Guided Practice
+        ctx.append("pool_exhaustion", {
+            "concept": concept,
+            "message": "All available curated retest questions have already been attempted.",
+        }, produced_by="system")
+        ctx.append("awaiting_guided_practice", {
+            "concept": concept,
+            "student_id": student_id,
+        }, produced_by="system")
+        return RunState.AWAITING_EXPERT
+
+    if untried and not exhausted:
         # Backward loop: return to SELECT to try another style
         return RunState.GATING
 
-    # Both styles failed: escalate to instructor with enriched context
+    # Both styles and guided practice failed: escalate to instructor with enriched context
     learner = LearnerModel(ctx.store, student_id)
     mastery_pct = int(learner.concept_mastery(concept) * 100)
     budget_info = ctx.budget.summary()
@@ -626,7 +649,8 @@ def start_session(store: Store, student_id: str, answers: dict[str, str],
 
 
 def submit_retest(store: Store, run_id: str, student_id: str, concept: str,
-                  answer: str, settings: Settings) -> None:
+                  answer: str, settings: Settings, question_text: str | None = None,
+                  correct_answer: str | None = None) -> None:
     """Submit a student's retest answer and score it deterministically."""
     selections = store.history(run_id, "style_selection")
     relevant = [v for v in selections if v.payload.get("concept") == concept]
@@ -640,8 +664,15 @@ def submit_retest(store: Store, run_id: str, student_id: str, concept: str,
     meta = store.meta(run_id)
     module_id = meta.get("module_id", "python_recursion")
     mod = get_module(module_id)
-    retest_q = mod.get_retest_question(concept, attempt)
-    passed = answer.strip().lower() == retest_q.correct.strip().lower()
+
+    if question_text is None or correct_answer is None:
+        retest_q = mod.get_retest_question(concept, attempt)
+        if question_text is None:
+            question_text = retest_q.text
+        if correct_answer is None:
+            correct_answer = retest_q.correct
+
+    passed = answer.strip().lower() == correct_answer.strip().lower()
 
     result = RetestResult(
         student_id=student_id,
@@ -650,6 +681,7 @@ def submit_retest(store: Store, run_id: str, student_id: str, concept: str,
         attempt=attempt,
         passed=passed,
         student_answer=answer,
-        correct_answer=retest_q.correct,
+        correct_answer=correct_answer,
+        question_text=question_text,
     )
     store.append(run_id, "retest_result", result.model_dump(), produced_by="student")

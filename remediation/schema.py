@@ -55,6 +55,7 @@ class RetestResult(BaseModel):
     passed: bool
     student_answer: Optional[str] = None
     correct_answer: Optional[str] = None
+    question_text: Optional[str] = None
 
 
 class Outcome(BaseModel):
@@ -91,4 +92,28 @@ class RetestFeedback(BaseModel):
     why_wrong: str
     what_to_remember: str
     source: str = "llm"  # "llm" or "fallback"
+
+
+class GuidedStep(BaseModel):
+    """One progressive reasoning step in Guided Practice."""
+    step_number: int
+    total_steps: int
+    context: str = ""
+    prompt: str
+    options: dict[str, str]
+    correct: str
+    explanation: str
+    hint: str = ""
+
+
+class GuidedPracticeRecord(BaseModel):
+    """Execution and completion record for a Guided Practice session."""
+    kind: str = "guided_practice"
+    student_id: str
+    concept: str
+    completed: bool = False
+    current_step: int = 1
+    total_steps: int = 3
+    step_results: list[dict] = []
+
 

@@ -41,6 +41,15 @@ from remediation.flow import (
 )
 from remediation.curriculum import list_modules, get_module, CurriculumModule
 from remediation.goals import get_learning_goal, get_goal_achieved
+from remediation.practice import (
+    get_attempted_question_texts,
+    get_next_unused_retest_question,
+    get_fresh_retest_question,
+    get_guided_practice,
+    has_completed_guided_practice,
+    get_guided_practice_progress,
+    record_guided_practice_event,
+)
 from remediation.questions import QUIZ_QUESTIONS, ANSWER_KEY, QUESTION_CONCEPT
 from remediation.learner import LearnerModel
 
@@ -238,6 +247,146 @@ def print_escalation_card(student_id: str, concept: str,
     print(f"└{'─' * w}┘")
 
 
+def print_pool_exhausted_card(concept_display: str) -> None:
+    """Print the retest pool exhaustion transition card."""
+    w = 60
+    print(f"\n┌{'─' * w}┐")
+    print(f"│ {'⚠️ RETEST POOL EXHAUSTED':<{w}} │")
+    print(f"│{' ' * w} │")
+    print(f"│ {f'Concept: {concept_display}':<{w}} │")
+    print(f"│{' ' * w} │")
+    print(f"│ {'All available retest questions have':<{w}} │")
+    print(f"│ {'already been attempted.':<{w}} │")
+    print(f"│{' ' * w} │")
+    print(f"│ {'Switching to:':<{w}} │")
+    print(f"│ {'→ GUIDED PRACTICE':<{w}} │")
+    print(f"└{'─' * w}┘\n")
+
+
+def print_guided_practice_complete_card(concept_display: str) -> None:
+    """Print the guided practice completion confirmation card."""
+    w = 60
+    print(f"\n┌{'─' * w}┐")
+    print(f"│ {'✓ GUIDED PRACTICE COMPLETE':<{w}} │")
+    print(f"│{' ' * w} │")
+    print(f"│ {'You successfully worked through the':<{w}} │")
+    print(f"│ {'concept step by step.':<{w}} │")
+    print(f"│{' ' * w} │")
+    print(f"│ {'Now let\'s test whether you can solve':<{w}} │")
+    print(f"│ {'a new problem independently.':<{w}} │")
+    print(f"└{'─' * w}┘\n")
+
+
+def run_guided_practice_session(
+    store: Store,
+    run_id: str,
+    student_id: str,
+    concept: str,
+    concept_display: str,
+    settings,
+    topic: str = "",
+    interactive: bool = True,
+    practice_provider=None,
+) -> bool:
+    """Run a 3-step Guided Practice session with immediate feedback and retry limits."""
+    steps = get_guided_practice(concept, topic=topic, settings=settings)
+    progress = get_guided_practice_progress(store, run_id, concept)
+
+    # Resume support: retrieve already completed steps if any
+    completed_steps = progress.get("step_results", []) if progress else []
+    completed_step_nums = {res.get("step_number") for res in completed_steps}
+    step_results = list(completed_steps)
+
+    print(f"\n{'═' * 60}")
+    print(f"  🧭 GUIDED PRACTICE: {concept_display.upper()}")
+    print("  Let's work through this concept step by step.")
+    print(f"{'═' * 60}\n")
+
+    for step in steps:
+        if step.step_number in completed_step_nums:
+            continue
+
+        w = 60
+        print(f"\n┌{'─' * w}┐")
+        step_header = f"GUIDED PRACTICE — Step {step.step_number} of {step.total_steps}"
+        print(f"│ {step_header:<{w}} │")
+        print(f"└{'─' * w}┘")
+        if step.context:
+            print(f"\n{step.context}")
+        print(f"\n{step.prompt}\n")
+        for opt, opt_text in step.options.items():
+            print(f"  [{opt.upper()}] {opt_text}")
+
+        attempts_on_step = 0
+        step_passed = False
+
+        while attempts_on_step < 2:
+            attempts_on_step += 1
+            if interactive and practice_provider is None:
+                while True:
+                    ans = input(f"\nYour answer [{'/'.join(step.options.keys())}]: ").strip().lower()
+                    if ans in step.options:
+                        break
+                    print("  Please enter a valid option.")
+            elif practice_provider is not None:
+                ans = practice_provider(student_id, concept, step.step_number, attempts_on_step)
+                if ans is None:
+                    ans = step.correct
+                print(f"\n  [Practice] Answer: {ans}")
+            else:
+                ans = step.correct
+
+            if ans == step.correct.lower():
+                step_passed = True
+                prefix = "✓ Correct!" if attempts_on_step == 1 else "✓ Correct on retry!"
+                print(f"\n{prefix} {step.explanation}")
+                break
+            else:
+                if attempts_on_step == 1:
+                    print(f"\n❌ Incorrect.")
+                    if step.hint:
+                        print(f"Hint: {step.hint}")
+                    print("Let's try this step one more time.")
+                else:
+                    correct_opt = step.correct.upper()
+                    correct_text = step.options.get(step.correct.lower(), "")
+                    print(f"\nCorrection: The correct choice is [{correct_opt}] {correct_text}.")
+                    print(f"{step.explanation}")
+
+        step_results.append({
+            "step_number": step.step_number,
+            "passed": step_passed,
+            "attempts": attempts_on_step,
+        })
+        record_guided_practice_event(
+            store=store,
+            run_id=run_id,
+            student_id=student_id,
+            concept=concept,
+            completed=False,
+            step_results=step_results,
+            current_step=step.step_number + 1,
+            total_steps=step.total_steps,
+        )
+
+    # Mark completely finished
+    record_guided_practice_event(
+        store=store,
+        run_id=run_id,
+        student_id=student_id,
+        concept=concept,
+        completed=True,
+        step_results=step_results,
+        current_step=len(steps),
+        total_steps=len(steps),
+    )
+    learner = LearnerModel(store, student_id)
+    learner.store.record_intervention(student_id, concept, "guided_practice", 0, True)
+
+    print_guided_practice_complete_card(concept_display)
+    return True
+
+
 # ── Session Runner ─────────────────────────────────────────────────────────
 
 def select_topic_menu(student_id: str, store: Store) -> str:
@@ -359,11 +508,13 @@ def run_session(student_id: str, module_id: str | None = None) -> None:
 
 def _drive_session_loop(store: Store, run_id: str, student_id: str,
                         s, flow, interactive: bool = True,
-                        retest_provider=None) -> RunState:
+                        retest_provider=None,
+                        practice_provider=None) -> RunState:
     """Drive the state machine loop with visible adaptation cards.
 
     If interactive=True, prompts the user for retest answers.
     If retest_provider is a callable, calls it(student_id, concept, style, attempt) for answers.
+    If practice_provider is a callable, calls it(student_id, concept, step_num, attempt) for guided practice answers.
     """
     learner = LearnerModel(store, student_id)
     prev_sel = None  # Track previous selection for adaptation cards
@@ -390,14 +541,99 @@ def _drive_session_loop(store: Store, run_id: str, student_id: str,
             return state
 
         elif state == RunState.AWAITING_EXPERT or state == RunState.PROBING:
-            # Determine if waiting for retest (student) or instructor
+            # Determine if waiting for retest (student), guided practice, or instructor
             awaiting_history = store.history(run_id, "awaiting_retest")
             flag_history = store.history(run_id, "instructor_flag")
+            gp_history = store.history(run_id, "awaiting_guided_practice")
 
             latest_awaiting_seq = awaiting_history[-1].seq if awaiting_history else -1
             latest_flag_seq = flag_history[-1].seq if flag_history else -1
+            latest_gp_seq = gp_history[-1].seq if gp_history else -1
 
-            if latest_awaiting_seq > latest_flag_seq and awaiting_history:
+            if latest_gp_seq > latest_flag_seq and gp_history:
+                # ── Guided Practice Triggered (Retest Pool Exhausted) ──
+                gp_payload = gp_history[-1].payload
+                concept = gp_payload["concept"]
+                run_meta = store.meta(run_id)
+                mod = get_module(run_meta.get("module_id", "python_recursion"))
+                concept_name = mod.concept_display_name(concept)
+
+                # Check if guided practice is already completed (resume support)
+                if not has_completed_guided_practice(store, run_id, concept):
+                    print_pool_exhausted_card(concept_name)
+                    run_guided_practice_session(
+                        store=store,
+                        run_id=run_id,
+                        student_id=student_id,
+                        concept=concept,
+                        concept_display=concept_name,
+                        settings=s,
+                        topic=mod.title,
+                        interactive=interactive,
+                        practice_provider=practice_provider,
+                    )
+
+                # ── Fresh Independent Retest ──
+                print(f"\n{'─'*50}")
+                print(f"🎯 FRESH RETEST: {concept_name}")
+                print("Demonstrate your independent understanding.")
+                print(f"{'─'*50}\n")
+
+                attempted = get_attempted_question_texts(store, run_id, concept)
+                fresh_q = get_fresh_retest_question(mod, concept, attempted, s)
+                print(f"Retest: {fresh_q.text}")
+                for opt, text in fresh_q.options.items():
+                    print(f"  ({opt}) {text}")
+
+                if interactive and retest_provider is None:
+                    while True:
+                        ans = input(f"Your answer [{'/'.join(fresh_q.options.keys())}]: ").strip().lower()
+                        if ans in fresh_q.options:
+                            break
+                        print("  Please enter a valid option.")
+                elif retest_provider is not None:
+                    ans = retest_provider(student_id, concept, "fresh_retest", 3)
+                    if ans is None:
+                        print(f"  [Demo] No answer provided — stopping.")
+                        return state
+                    print(f"  [Demo] Answer: {ans}")
+                else:
+                    return state
+
+                passed = ans.strip().lower() == fresh_q.correct.strip().lower()
+                old_m = learner.concept_mastery(concept)
+
+                submit_retest(
+                    store, run_id, student_id, concept, ans, s,
+                    question_text=fresh_q.text, correct_answer=fresh_q.correct,
+                )
+                store.set_state(run_id, RunState.PROBING)
+
+                # Advance state machine so _evaluate executes
+                state = advance(store, run_id, flow, s)
+                new_m = learner.concept_mastery(concept)
+
+                if passed:
+                    rem_state = store.latest(run_id, "remediation_state")
+                    concepts_rem = rem_state.get("concepts_remaining", []) if rem_state else []
+                    curr_idx = rem_state.get("current_concept_index", 0) if rem_state else 0
+                    if state != RunState.COMPLETE and curr_idx < len(concepts_rem):
+                        next_c = concepts_rem[curr_idx]
+                        next_step = f"Continue to the next knowledge gap: {mod.concept_display_name(next_c)}"
+                    else:
+                        next_step = "All concepts resolved! Session complete."
+
+                    goal_achieved = get_goal_achieved(concept, topic=mod.title)
+                    print_concept_improved_card(concept_name, old_m, new_m, goal_achieved, next_step)
+                else:
+                    print_retest_result_card(concept, 3, passed, old_m, new_m)
+                    fb = store.latest(run_id, "retest_feedback")
+                    if fb:
+                        print_retest_feedback_card(fb)
+
+                continue
+
+            elif latest_awaiting_seq > latest_flag_seq and awaiting_history:
                 # Need retest answer from student
                 sel = store.latest(run_id, "style_selection")
                 expl = store.latest(run_id, "explanation")
@@ -434,7 +670,12 @@ def _drive_session_loop(store: Store, run_id: str, student_id: str,
                     print(expl["text"])
                     print(f"{'─'*50}\n")
 
-                    retest_q = mod.get_retest_question(concept, attempt)
+                    # Avoid repeating an already-attempted question
+                    attempted_texts = get_attempted_question_texts(store, run_id, concept)
+                    retest_q = get_next_unused_retest_question(mod, concept, attempted_texts)
+                    if retest_q is None:
+                        retest_q = mod.get_retest_question(concept, attempt)
+
                     print(f"Retest: {retest_q.text}")
                     for opt, text in retest_q.options.items():
                         print(f"  ({opt}) {text}")
@@ -458,7 +699,10 @@ def _drive_session_loop(store: Store, run_id: str, student_id: str,
                     passed = ans.strip().lower() == retest_q.correct.strip().lower()
                     old_m = learner.concept_mastery(concept)
 
-                    submit_retest(store, run_id, sel["student_id"], concept, ans, s)
+                    submit_retest(
+                        store, run_id, sel["student_id"], concept, ans, s,
+                        question_text=retest_q.text, correct_answer=retest_q.correct,
+                    )
                     store.set_state(run_id, RunState.PROBING)
 
                     # Advance state machine so _evaluate executes, updating learner mastery and state
