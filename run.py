@@ -40,6 +40,7 @@ from remediation.flow import (
     score_quiz, get_retest_question, styles_tried_for_concept,
 )
 from remediation.curriculum import list_modules, get_module, CurriculumModule
+from remediation.goals import get_learning_goal, get_goal_achieved
 from remediation.questions import QUIZ_QUESTIONS, ANSWER_KEY, QUESTION_CONCEPT
 from remediation.learner import LearnerModel
 
@@ -140,6 +141,83 @@ def print_retest_feedback_card(fb: dict) -> None:
     print(f"│{' ' * w} │")
     print(f"│ {'What to remember:':<{w}} │")
     for line in textwrap.wrap(rem, width=w - 2):
+        print(f"│ {line:<{w - 2}} │")
+    print(f"└{'─' * w}┘")
+
+
+def print_learning_state_card(
+    concept: str,
+    concept_display: str,
+    mastery_pct: int,
+    current_style: str,
+    attempt: int,
+    prev_style: str | None = None,
+    prev_failed: bool = False,
+    adaptation_reason: str = "",
+    goal: str = "",
+) -> None:
+    """Print the compact learning state and immediate next goal card."""
+    import textwrap
+    w = 60
+
+    print(f"\n┌{'─' * w}┐")
+    print(f"│ {'🎯 YOUR LEARNING STATE':<{w}} │")
+    print(f"│{' ' * w} │")
+    print(f"│ {'Concept:':<16}{concept_display:<{w - 16}} │")
+    mastery_line = f"{mastery_pct}% {mastery_bar(mastery_pct)}"
+    print(f"│ {'Mastery:':<16}{mastery_line:<{w - 16}} │")
+    print(f"│{' ' * w} │")
+
+    if attempt > 1 and prev_style:
+        status_tag = "❌" if prev_failed else "⚠️"
+        prev_line = f"Previous approach: {prev_style.replace('_', ' ').title()} {status_tag}"
+        print(f"│ {prev_line:<{w}} │")
+        print(f"│ {'Result: Did not resolve the gap':<{w}} │")
+        print(f"│{' ' * w} │")
+        next_line = f"Next approach: {current_style.replace('_', ' ').title()}"
+        print(f"│ {next_line:<{w}} │")
+        if adaptation_reason:
+            reason_line = f"Reason: {adaptation_reason[:w-10]}"
+            print(f"│ {reason_line:<{w}} │")
+    else:
+        curr_line = f"Current approach: {current_style.replace('_', ' ').title()}"
+        print(f"│ {curr_line:<{w}} │")
+
+    print(f"│{' ' * w} │")
+    print(f"│ {'Current goal:':<{w}} │")
+    for line in textwrap.wrap(goal, width=w - 2):
+        print(f"│ {line:<{w - 2}} │")
+    print(f"└{'─' * w}┘")
+
+
+def print_concept_improved_card(
+    concept_display: str,
+    old_mastery: float,
+    new_mastery: float,
+    goal_achieved: str,
+    next_step: str,
+) -> None:
+    """Print the progress transition card after a successful retest."""
+    import textwrap
+    w = 60
+    old_pct = int(old_mastery * 100)
+    new_pct = int(new_mastery * 100)
+    delta = new_pct - old_pct
+    delta_str = f"+{delta}%" if delta >= 0 else f"{delta}%"
+
+    print(f"\n┌{'─' * w}┐")
+    print(f"│ {'✓ CONCEPT IMPROVED':<{w}} │")
+    print(f"│{' ' * w} │")
+    print(f"│ {concept_display:<{w}} │")
+    progress_line = f"{old_pct}% ➔ {new_pct}% {mastery_bar(new_pct)} ({delta_str})"
+    print(f"│ {progress_line:<{w}} │")
+    print(f"│{' ' * w} │")
+    print(f"│ {'Goal achieved:':<{w}} │")
+    for line in textwrap.wrap(goal_achieved, width=w - 2):
+        print(f"│ {line:<{w - 2}} │")
+    print(f"│{' ' * w} │")
+    nxt_line = f"Next ➔ {next_step}"
+    for line in textwrap.wrap(nxt_line, width=w - 2):
         print(f"│ {line:<{w - 2}} │")
     print(f"└{'─' * w}┘")
 
@@ -330,21 +408,24 @@ def _drive_session_loop(store: Store, run_id: str, student_id: str,
                     style = sel["selected_style"]
                     reason = sel.get("reason", "")
 
-                    # Show knowledge gap card
-                    current_mastery = learner.concept_mastery(concept)
-                    print_knowledge_gap_card(
-                        student_id, concept, current_mastery * 100,
-                        learner, style, reason, attempt,
-                    )
-
-                    # Check if this is a retry after failure (show adaptation card)
-                    if attempt > 1 and prev_sel:
-                        prev_style = prev_sel.get("selected_style", "")
-                        print_adaptation_card(attempt - 1, prev_style, style, reason)
-
                     run_meta = store.meta(run_id)
                     mod = get_module(run_meta.get("module_id", "python_recursion"))
                     concept_name = mod.concept_display_name(concept)
+                    current_mastery = learner.concept_mastery(concept)
+                    goal = get_learning_goal(concept, topic=mod.title, attempt=attempt)
+
+                    prev_style = prev_sel.get("selected_style") if (attempt > 1 and prev_sel) else None
+                    print_learning_state_card(
+                        concept=concept,
+                        concept_display=concept_name,
+                        mastery_pct=int(current_mastery * 100),
+                        current_style=style,
+                        attempt=attempt,
+                        prev_style=prev_style,
+                        prev_failed=(attempt > 1),
+                        adaptation_reason=reason,
+                        goal=goal,
+                    )
 
                     print(f"\n{'─'*50}")
                     print(f"Explanation for: {concept_name}")
@@ -380,18 +461,29 @@ def _drive_session_loop(store: Store, run_id: str, student_id: str,
                     submit_retest(store, run_id, sel["student_id"], concept, ans, s)
                     store.set_state(run_id, RunState.PROBING)
 
+                    # Advance state machine so _evaluate executes, updating learner mastery and state
+                    state = advance(store, run_id, flow, s)
+
                     # Compute new mastery for the card
                     new_m = learner.concept_mastery(concept)
-                    print_retest_result_card(concept, attempt, passed, old_m, new_m)
 
-                    if not passed:
-                        # Advance state machine so _evaluate executes and generates targeted feedback
-                        state = advance(store, run_id, flow, s)
+                    if passed:
+                        rem_state = store.latest(run_id, "remediation_state")
+                        concepts_rem = rem_state.get("concepts_remaining", []) if rem_state else []
+                        curr_idx = rem_state.get("current_concept_index", 0) if rem_state else 0
+                        if state != RunState.COMPLETE and curr_idx < len(concepts_rem):
+                            next_c = concepts_rem[curr_idx]
+                            next_step = f"Continue to the next knowledge gap: {mod.concept_display_name(next_c)}"
+                        else:
+                            next_step = "All concepts resolved! Session complete."
+
+                        goal_achieved = get_goal_achieved(concept, topic=mod.title)
+                        print_concept_improved_card(concept_name, old_m, new_m, goal_achieved, next_step)
+                    else:
+                        print_retest_result_card(concept, attempt, passed, old_m, new_m)
                         fb = store.latest(run_id, "retest_feedback")
                         if fb:
                             print_retest_feedback_card(fb)
-                        prev_sel = sel
-                        continue
 
                     prev_sel = sel
                     continue
